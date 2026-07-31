@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { getGames } from './api';
 import { createRoot } from 'react-dom/client';
 import {
   Bell,
@@ -87,6 +88,9 @@ const activity = [
 
 function App() {
   const [activeFilter, setActiveFilter] = useState('Featured');
+  const [gamesList, setGamesList] = useState([]);
+  const [isLoadingGames, setIsLoadingGames] = useState(true);
+  const [gamesError, setGamesError] = useState("");
   const [query, setQuery] = useState('');
   const [rating, setRating] = useState(4);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -95,7 +99,7 @@ function App() {
 
   const visibleGames = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    return games.filter((game) => {
+    return gamesList.filter((game) => {
       const matchesFilter = activeFilter === 'Featured' || game.mode === activeFilter;
       const matchesQuery =
         !normalizedQuery ||
@@ -104,7 +108,7 @@ function App() {
         game.tag.toLowerCase().includes(normalizedQuery);
       return matchesFilter && matchesQuery;
     });
-  }, [activeFilter, query]);
+  }, [activeFilter, query, gamesList]);
 
   const requireAccount = (action) => {
     if (isAuthenticated) {
@@ -125,6 +129,20 @@ function App() {
     setIsAuthenticated(false);
     setGateNotice('You are browsing as a guest. Games and reviews stay visible.');
   };
+
+  useEffect(() => {
+  getGames()
+    .then((data) => {
+      setGamesList(data);
+      setGamesError("");
+    })
+    .catch(() => {
+      setGamesError("Could not load games from the API.");
+    })
+    .finally(() => {
+      setIsLoadingGames(false);
+    });
+}, []);
 
   return (
     <main className="app-shell">
