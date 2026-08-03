@@ -896,6 +896,60 @@ textarea:disabled {
   line-height: 1.45;
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(8, 5, 4, 0.72);
+}
+
+.confirm-dialog {
+  width: min(420px, 100%);
+  border: 2px solid #443226;
+  background:
+    linear-gradient(145deg, rgba(242, 161, 30, 0.13), transparent 46%),
+    #211814;
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.58);
+  padding: 18px;
+}
+
+.confirm-dialog p {
+  margin-bottom: 18px;
+  color: #d4c1ae;
+  line-height: 1.5;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 2px solid #100c0a;
+  background: #ff6b4a;
+  color: #160f0b;
+  box-shadow: 4px 4px 0 #050403;
+  font-weight: 900;
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.danger-button:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 #050403;
+}
+
 @media (max-width: 920px) {
   .top-strip,
   .hero-panel,

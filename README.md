@@ -36,3 +36,4 @@ This project uses Git branches. Keep `main` stable, and create separate branches
 
 See `docs/GIT_WORKFLOW.md` before starting work.
 
+For Supabase setup, see `docs/SUPABASE_SETUP.md`.

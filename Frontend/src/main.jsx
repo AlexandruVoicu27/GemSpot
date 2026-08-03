@@ -105,8 +105,15 @@ function App() {
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [gateNotice, setGateNotice] = useState('');
   const [reviewText, setReviewText] = useState('');
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
 
   const user = session?.user ?? null;
+  const profile = session?.profile ?? user?.profile ?? null;
+  const accountLabel =
+    profile?.username ||
+    user?.user_metadata?.username ||
+    user?.email ||
+    "Account";
   const isAuthenticated = Boolean(user);
   const showAuthPage = Boolean(authPage && !isAuthenticated);
   const isSignup = authMode === "signup";
@@ -200,6 +207,7 @@ function App() {
         setSession({
           access_token: data.session.access_token,
           user: data.user,
+          profile: data.profile,
         });
       } else {
         // Cu Confirm Email activ, signup-ul reusit nu logheaza userul imediat.
@@ -224,10 +232,19 @@ function App() {
     }
   };
 
-  const logout = () => {
+  const requestLogout = () => {
+    setIsLogoutConfirmOpen(true);
+  };
+
+  const cancelLogout = () => {
+    setIsLogoutConfirmOpen(false);
+  };
+
+  const confirmLogout = () => {
     clearAuthToken();
     setSession(null);
     setAuthPage(null);
+    setIsLogoutConfirmOpen(false);
     setGateNotice("You are browsing as a guest. Games and reviews stay visible.");
   };
 
@@ -249,7 +266,10 @@ function App() {
     // La refresh, verificam daca tokenul din localStorage inca este valid.
     getCurrentUser()
       .then((data) => {
-        setSession({ user: data.user });
+        setSession({
+          user: data.user,
+          profile: data.user?.profile,
+        });
       })
       .catch(() => {
         clearAuthToken();
@@ -287,9 +307,9 @@ function App() {
               <div className="account-cluster">
                 <span className="account-pill">
                   <CheckCircle2 size={16} />
-                  {user.email}
+                  {accountLabel}
                 </span>
-                <button className="icon-button" onClick={logout} aria-label="Log out">
+                <button className="icon-button" onClick={requestLogout} aria-label="Log out">
                   <LogOut size={19} />
                 </button>
               </div>
@@ -625,6 +645,32 @@ function App() {
         </div>
       </section>
         </>
+      )}
+      {isLogoutConfirmOpen && (
+        <div className="modal-backdrop" role="presentation" onClick={cancelLogout}>
+          <section
+            className="confirm-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="logout-confirm-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="section-mini">
+              <LogOut size={18} />
+              <strong id="logout-confirm-title">Log out?</strong>
+            </div>
+            <p>Are you sure you want to leave this GemSpot account?</p>
+            <div className="confirm-actions">
+              <button className="ghost-button" onClick={cancelLogout}>
+                Stay
+              </button>
+              <button className="danger-button" onClick={confirmLogout}>
+                <LogOut size={17} />
+                Log out
+              </button>
+            </div>
+          </section>
+        </div>
       )}
     </main>
   );
