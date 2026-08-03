@@ -1,6 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { clearAuthToken, getCurrentUser, getGames, login, signup } from "./api";
 import {
+  ArrowLeft,
   Bell,
   CheckCircle2,
   Crown,
@@ -87,15 +89,52 @@ const activity = [
 
 function App() {
   const [activeFilter, setActiveFilter] = useState('Featured');
+  const [gamesList, setGamesList] = useState([]);
+  const [isLoadingGames, setIsLoadingGames] = useState(true);
+  const [gamesError, setGamesError] = useState("");
   const [query, setQuery] = useState('');
   const [rating, setRating] = useState(4);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [session, setSession] = useState(null);
+  const [authUsername, setAuthUsername] = useState("");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authPasswordConfirm, setAuthPasswordConfirm] = useState("");
+  const [authMode, setAuthMode] = useState("login");
+  const [authPage, setAuthPage] = useState(null);
+  const [authError, setAuthError] = useState("");
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [gateNotice, setGateNotice] = useState('');
   const [reviewText, setReviewText] = useState('');
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+
+  const user = session?.user ?? null;
+  const profile = session?.profile ?? user?.profile ?? null;
+  const accountLabel =
+    profile?.username ||
+    user?.user_metadata?.username ||
+    user?.email ||
+    "Account";
+  const isAuthenticated = Boolean(user);
+  const showAuthPage = Boolean(authPage && !isAuthenticated);
+  const isSignup = authMode === "signup";
+
+  const passwordChecks = {
+    length: authPassword.length >= 8,
+    uppercase: /[A-Z]/.test(authPassword),
+    lowercase: /[a-z]/.test(authPassword),
+    number: /\d/.test(authPassword),
+    match: authPassword.length > 0 && authPassword === authPasswordConfirm,
+  };
+
+  const isPasswordSecure =
+    passwordChecks.length &&
+    passwordChecks.uppercase &&
+    passwordChecks.lowercase &&
+    passwordChecks.number;
 
   const visibleGames = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    return games.filter((game) => {
+    return gamesList.filter((game) => {
       const matchesFilter = activeFilter === 'Featured' || game.mode === activeFilter;
       const matchesQuery =
         !normalizedQuery ||
@@ -104,7 +143,7 @@ function App() {
         game.tag.toLowerCase().includes(normalizedQuery);
       return matchesFilter && matchesQuery;
     });
-  }, [activeFilter, query]);
+  }, [activeFilter, query, gamesList]);
 
   const requireAccount = (action) => {
     if (isAuthenticated) {
@@ -113,18 +152,130 @@ function App() {
     }
 
     setGateNotice(`${action} needs a GemSpot account first.`);
+    setAuthMode("login");
+    setAuthPage("login");
     return false;
   };
 
-  const startDemoSession = () => {
-    setIsAuthenticated(true);
-    setGateNotice('');
+  const openAuthPage = (mode) => {
+    // Headerul doar navigheaza spre pagina dedicata de auth.
+    setAuthMode(mode);
+    setAuthPage(mode);
+    setAuthError("");
+    setAuthUsername("");
+    setAuthPassword("");
+    setAuthPasswordConfirm("");
+    setGateNotice("");
   };
 
-  const endDemoSession = () => {
-    setIsAuthenticated(false);
-    setGateNotice('You are browsing as a guest. Games and reviews stay visible.');
+  const showHomePage = () => {
+    setAuthPage(null);
+    setAuthError("");
   };
+
+  const handleAuthSubmit = async (event) => {
+    event.preventDefault();
+    setAuthError("");
+    setIsAuthLoading(true);
+
+    if (isSignup && authUsername.trim().length < 3) {
+      setAuthError("Username must have at least 3 characters.");
+      setIsAuthLoading(false);
+      return;
+    }
+
+    if (isSignup && !isPasswordSecure) {
+      setAuthError("Password must have at least 8 characters, one uppercase letter, one lowercase letter, and one number.");
+      setIsAuthLoading(false);
+      return;
+    }
+
+    if (isSignup && !passwordChecks.match) {
+      setAuthError("Passwords do not match.");
+      setIsAuthLoading(false);
+      return;
+    }
+
+    try {
+      // Frontendul trimite credentialele la backend, nu direct la Supabase.
+      const data =
+        isSignup
+          ? await signup(authEmail, authPassword, authUsername.trim())
+          : await login(authEmail, authPassword);
+
+      if (data.session?.access_token) {
+        setSession({
+          access_token: data.session.access_token,
+          user: data.user,
+          profile: data.profile,
+        });
+      } else {
+        // Cu Confirm Email activ, signup-ul reusit nu logheaza userul imediat.
+        setSession(null);
+      }
+
+      setGateNotice(
+        data.needsEmailConfirmation
+          ? "Account created. Check your email to confirm it."
+          : ""
+      );
+      if (!data.needsEmailConfirmation) {
+        setAuthPage(null);
+      }
+      setAuthUsername("");
+      setAuthPassword("");
+      setAuthPasswordConfirm("");
+    } catch (error) {
+      setAuthError(error.message);
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const requestLogout = () => {
+    setIsLogoutConfirmOpen(true);
+  };
+
+  const cancelLogout = () => {
+    setIsLogoutConfirmOpen(false);
+  };
+
+  const confirmLogout = () => {
+    clearAuthToken();
+    setSession(null);
+    setAuthPage(null);
+    setIsLogoutConfirmOpen(false);
+    setGateNotice("You are browsing as a guest. Games and reviews stay visible.");
+  };
+
+  useEffect(() => {
+    getGames()
+      .then((data) => {
+        setGamesList(data);
+        setGamesError("");
+      })
+      .catch(() => {
+        setGamesError("Could not load games from the API.");
+      })
+      .finally(() => {
+        setIsLoadingGames(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    // La refresh, verificam daca tokenul din localStorage inca este valid.
+    getCurrentUser()
+      .then((data) => {
+        setSession({
+          user: data.user,
+          profile: data.user?.profile,
+        });
+      })
+      .catch(() => {
+        clearAuthToken();
+        setSession(null);
+      });
+  }, []);
 
   return (
     <main className="app-shell">
@@ -156,19 +307,19 @@ function App() {
               <div className="account-cluster">
                 <span className="account-pill">
                   <CheckCircle2 size={16} />
-                  Logged in
+                  {accountLabel}
                 </span>
-                <button className="icon-button" onClick={endDemoSession} aria-label="Log out">
+                <button className="icon-button" onClick={requestLogout} aria-label="Log out">
                   <LogOut size={19} />
                 </button>
               </div>
             ) : (
               <div className="account-cluster">
-                <button className="ghost-button" onClick={startDemoSession}>
+                <button className="ghost-button" onClick={() => openAuthPage("login")}>
                   <LogIn size={17} />
                   Log in
                 </button>
-                <button className="upload-button" onClick={startDemoSession}>
+                <button className="upload-button" onClick={() => openAuthPage("signup")}>
                   <UserPlus size={18} />
                   Create account
                 </button>
@@ -186,6 +337,92 @@ function App() {
         </nav>
       </header>
 
+      {showAuthPage ? (
+        <section className="auth-page">
+          <button className="back-button" onClick={showHomePage}>
+            <ArrowLeft size={17} />
+            Back
+          </button>
+
+          <div className="auth-panel">
+            <span className="eyebrow">GemSpot Account</span>
+            <h1>{isSignup ? "Create account" : "Log in"}</h1>
+            <p>
+              {isSignup
+                ? "Create a GemSpot account. You will need to confirm your email before logging in."
+                : "Continue to upload games, write reviews, and keep your creator tools unlocked."}
+            </p>
+
+            <form className="auth-page-form" onSubmit={handleAuthSubmit}>
+              {isSignup && (
+                <label>
+                  Username
+                  <input
+                    type="text"
+                    value={authUsername}
+                    onChange={(event) => setAuthUsername(event.target.value)}
+                    placeholder="Your creator name"
+                    required
+                    minLength={3}
+                    maxLength={24}
+                  />
+                </label>
+              )}
+              <label>
+                Email
+                <input
+                  type="email"
+                  value={authEmail}
+                  onChange={(event) => setAuthEmail(event.target.value)}
+                  placeholder="you@example.com"
+                  required
+                />
+              </label>
+              <label>
+                Password
+                <input
+                  type="password"
+                  value={authPassword}
+                  onChange={(event) => setAuthPassword(event.target.value)}
+                  placeholder="Minimum 6 characters"
+                  required
+                  minLength={isSignup ? 8 : 6}
+                />
+              </label>
+              {isSignup && (
+                <>
+                  <label>
+                    Confirm password
+                    <input
+                      type="password"
+                      value={authPasswordConfirm}
+                      onChange={(event) => setAuthPasswordConfirm(event.target.value)}
+                      placeholder="Repeat your password"
+                      required
+                      minLength={8}
+                    />
+                  </label>
+                </>
+              )}
+              <button className="auth-submit" type="submit" disabled={isAuthLoading}>
+                {isSignup ? <UserPlus size={18} /> : <LogIn size={18} />}
+                {isAuthLoading ? "Working" : isSignup ? "Create account" : "Log in"}
+              </button>
+            </form>
+
+            {authError && <p className="auth-error">{authError}</p>}
+            {gateNotice && <p className="gate-notice">{gateNotice}</p>}
+
+            <button
+              className="auth-switch"
+              onClick={() => openAuthPage(isSignup ? "login" : "signup")}
+            >
+              {isSignup ? "Already have an account?" : "Need an account?"}
+            </button>
+          </div>
+        </section>
+      ) : (
+        <>
       <section className="hero-panel">
         <div className="hero-copy">
           <div className="badge-row">
@@ -407,6 +644,34 @@ function App() {
           <span>Creators can request structured reviews from trusted testers.</span>
         </div>
       </section>
+        </>
+      )}
+      {isLogoutConfirmOpen && (
+        <div className="modal-backdrop" role="presentation" onClick={cancelLogout}>
+          <section
+            className="confirm-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="logout-confirm-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="section-mini">
+              <LogOut size={18} />
+              <strong id="logout-confirm-title">Log out?</strong>
+            </div>
+            <p>Are you sure you want to leave this GemSpot account?</p>
+            <div className="confirm-actions">
+              <button className="ghost-button" onClick={cancelLogout}>
+                Stay
+              </button>
+              <button className="danger-button" onClick={confirmLogout}>
+                <LogOut size={17} />
+                Log out
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </main>
   );
 }
