@@ -31,6 +31,38 @@ function isValidUsername(username) {
   return usernamePattern.test(username);
 }
 
+function normalizeLoginIdentifier(identifier) {
+  return String(identifier || "").trim();
+}
+
+function isEmailIdentifier(identifier) {
+  return identifier.includes("@");
+}
+
+async function resolveLoginEmail(identifier) {
+  const normalizedIdentifier = normalizeLoginIdentifier(identifier);
+
+  if (isEmailIdentifier(normalizedIdentifier)) {
+    return normalizedIdentifier.toLowerCase();
+  }
+
+  if (!isValidUsername(normalizedIdentifier)) {
+    return null;
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("users")
+    .select("email")
+    .eq("username", normalizedIdentifier)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data?.email || null;
+}
+
 async function upsertUserProfile(authUser, username) {
   if (!authUser?.id || !authUser?.email) {
     return null;
@@ -132,15 +164,26 @@ router.post("/login", loginRateLimit, async (req, res) => {
   }
 
   const { email, password } = req.body;
+  let loginEmail = null;
+
+  try {
+    loginEmail = await resolveLoginEmail(email);
+  } catch (identifierError) {
+    return res.status(500).json({ error: identifierError.message });
+  }
+
+  if (!loginEmail) {
+    return res.status(401).json({ error: "Invalid login credentials" });
+  }
 
   // Backendul verifica email/parola prin Supabase.
   const { data, error } = await supabase.auth.signInWithPassword({
-    email,
+    email: loginEmail,
     password,
   });
 
   if (error) {
-    return res.status(401).json({ error: error.message });
+    return res.status(401).json({ error: "Invalid login credentials" });
   }
 
   let profile = null;
