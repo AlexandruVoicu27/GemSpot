@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { clearAuthToken, getCurrentUser, getGames, login, signup } from "./api";
-import ProfilePage from "./Pages";
+import { clearAuthToken, getCurrentUser, getGames, login, signup, updateProfile } from "./api";
+import ProfilePage, { EditProfilePage, UploadPage } from "./Pages";
 import {
   ArrowLeft,
   Bell,
@@ -126,6 +126,8 @@ const accountInitials = accountLabel
 const isAuthenticated = Boolean(user);
   const showAuthPage = Boolean(authPage && !isAuthenticated);
   const isProfilePage = page === "profile" && isAuthenticated;
+  const isEditProfilePage = page === "edit-profile" && isAuthenticated;
+  const isUploadPage = page === "upload" && isAuthenticated;
 
 
   const visibleGames = useMemo(() => {
@@ -149,6 +151,17 @@ const isAuthenticated = Boolean(user);
 
     setGateNotice(`${action} needs a GemSpot account first.`);
     return false;
+  };
+
+  const handleStartUpload = () => {
+    if (!isAuthenticated) {
+      setGateNotice("Uploading a project needs a GemSpot account first.");
+      openAuthPage("signup");
+      return;
+    }
+
+    setPage("upload");
+    setAuthPage(null);
   };
 
 
@@ -217,6 +230,25 @@ const isAuthenticated = Boolean(user);
     }
     setGateNotice(item + " is coming next.");
   };
+
+  const handleProfileSave = async (profileData) => {
+  const data = await updateProfile(profileData);
+
+  setSession((current) =>
+    current
+      ? {
+          ...current,
+          profile: data.profile,
+          user: {
+            ...current.user,
+            profile: data.profile,
+          },
+        }
+      : current
+  );
+
+  return data.profile;
+};
 
   useEffect(() => {
     getGames()
@@ -330,8 +362,25 @@ return (
             </button>
           </div>
         </section>
+      ) : isEditProfilePage ? (
+        <EditProfilePage
+          accountLabel={accountLabel}
+          user={user}
+          profile={profile}
+          onBack={() => setPage("profile")}
+          onSaved={handleProfileSave}
+        />
+      ) : isUploadPage ? (
+        <UploadPage profile={profile} onBack={() => setPage("home")} />
       ) : isProfilePage ? (
-        <ProfilePage accountLabel={accountLabel} user={user} profile={profile} requireAccount={requireAccount} />
+        <ProfilePage
+          accountLabel={accountLabel}
+          user={user}
+          profile={profile}
+          requireAccount={requireAccount}
+          onEdit={() => setPage("edit-profile")}
+          onUpload={handleStartUpload}
+        />
       ) : (
         <>
       <section className="hero-panel">
@@ -356,7 +405,7 @@ return (
               {isAuthenticated ? <Play size={18} fill="currentColor" /> : <LockKeyhole size={18} />}
               Get Spotlight
             </button>
-            <button className="secondary" onClick={() => requireAccount('Uploading a project')}>
+            <button className="secondary" onClick={handleStartUpload}>
               {isAuthenticated ? <Plus size={18} /> : <LockKeyhole size={18} />}
               Start Project
             </button>
@@ -466,7 +515,7 @@ return (
             <span className="eyebrow">Creator Console</span>
             <h2>{isAuthenticated ? 'Launch a build, get useful feedback.' : 'Create an account to publish games.'}</h2>
             <div className="console-actions">
-              <button onClick={() => requireAccount('Uploading a project')}>
+              <button onClick={handleStartUpload}>
                 {isAuthenticated ? <Upload size={17} /> : <LockKeyhole size={17} />}
                 New Upload
               </button>

@@ -35,7 +35,9 @@ async function apiFetch(path, options = {}) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(data?.error || "API request failed");
+    const error = new Error(data?.error || "API request failed");
+    error.code = data?.code;
+    throw error;
   }
 
   return data;
@@ -81,4 +83,33 @@ export async function getCurrentUser() {
 
 export async function getGames() {
   return apiFetch("/games");
+}
+
+export async function updateProfile(profileData) {
+  return apiFetch("/auth/profile", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(profileData),
+  });
+}
+
+
+export async function uploadGame({ title, description, genre, gameFile, adminBypassScan }) {
+  const formData = new FormData();
+  formData.append("title", title);
+  formData.append("description", description);
+  if (genre) formData.append("genre", genre);
+  formData.append("gameFile", gameFile);
+  if (adminBypassScan) formData.append("adminBypassScan", "true");
+
+  return apiFetch("/uploads/games", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export async function getUploadStatus(fileId) {
+  return apiFetch("/uploads/" + fileId);
 }

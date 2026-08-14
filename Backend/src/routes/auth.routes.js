@@ -1,6 +1,7 @@
 const express = require("express");
 const { requireSupabaseConfig, supabase, supabaseAdmin } = require("../db");
 const createRateLimit = require("../middleware/rateLimit");
+const requireAuth = require("../middleware/requireAuth");
 
 const router = express.Router();
 const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
@@ -37,6 +38,72 @@ function normalizeLoginIdentifier(identifier) {
 
 function isEmailIdentifier(identifier) {
   return identifier.includes("@");
+}
+
+
+const profileSelect =
+  "id, username, email, display_name, bio, avatar_url, role, created_at, updated_at";
+
+const allowedAvatarTypes = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+function parseAvatarData(avatarData) {
+  if (!avatarData) {
+    return null;
+  }
+
+  const match = String(avatarData).match(
+    /^data:(image\/(?:png|jpeg|webp|gif));base64,(.+)$/
+  );
+
+  if (!match) {
+    throw new Error("Invalid avatar image.");
+  }
+
+  const mimeType = match[1];
+  const buffer = Buffer.from(match[2], "base64");
+
+  if (buffer.length > 2 * 1024 * 1024) {
+    throw new Error("Avatar must be smaller than 2MB.");
+  }
+
+  return {
+    buffer,
+    mimeType,
+    extension: allowedAvatarTypes[mimeType],
+  };
+}
+
+async function uploadAvatar(userId, avatarData) {
+  const parsedAvatar = parseAvatarData(avatarData);
+
+  if (!parsedAvatar) {
+    return null;
+  }
+
+  const filePath =
+    userId + "/" + Date.now() + "." + parsedAvatar.extension;
+
+  const { error } = await supabaseAdmin.storage
+    .from("avatars")
+    .upload(filePath, parsedAvatar.buffer, {
+      contentType: parsedAvatar.mimeType,
+      upsert: true,
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  const { data } = supabaseAdmin.storage
+    .from("avatars")
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
 }
 
 async function resolveLoginEmail(identifier) {
@@ -83,7 +150,7 @@ async function upsertUserProfile(authUser, username) {
       },
       { onConflict: "id" }
     )
-    .select("id, username, email, role, created_at, updated_at")
+    .select(profileSelect)
     .single();
 
   if (error) {
@@ -106,7 +173,6 @@ router.post("/signup", signupRateLimit, async (req, res) => {
       error: "Username must be 3-24 characters and use only letters, numbers, or underscores.",
     });
   }
-
   const { data: existingProfile, error: existingProfileError } = await supabaseAdmin
     .from("users")
     .select("id")
@@ -199,6 +265,101 @@ router.post("/login", loginRateLimit, async (req, res) => {
     user: data.user,
     profile,
     session: data.session,
+  });
+});
+
+
+router.patch("/profile", requireAuth, async (req, res) => {
+  if (!requireSupabaseConfig(res)) {
+    return;
+  }
+
+  const {
+    username,
+    displayName,
+    bio,
+    avatarData,
+    removeAvatar = false,
+  } = req.body;
+
+  const updates = {};
+
+  if (username !== undefined) {
+    const normalizedUsername = normalizeUsername(username);
+
+    if (!isValidUsername(normalizedUsername)) {
+      return res.status(400).json({
+        error: "Username must be 3-24 characters and use only letters, numbers, or underscores.",
+      });
+    }
+
+    const { data: existingUser, error: existingUserError } =
+      await supabaseAdmin
+        .from("users")
+        .select("id")
+        .eq("username", normalizedUsername)
+        .neq("id", req.user.id)
+        .maybeSingle();
+
+    if (existingUserError) {
+      return res.status(500).json({ error: existingUserError.message });
+    }
+
+    if (existingUser) {
+      return res.status(409).json({
+        error: "Username is already taken.",
+      });
+    }
+
+    updates.username = normalizedUsername;
+  }
+
+  if (displayName !== undefined) {
+    updates.display_name = String(displayName).trim().slice(0, 60);
+  }
+
+  if (bio !== undefined) {
+    updates.bio = String(bio).trim().slice(0, 280);
+  }
+
+  if (removeAvatar) {
+    updates.avatar_url = null;
+  }
+
+  if (avatarData) {
+    try {
+      updates.avatar_url = await uploadAvatar(req.user.id, avatarData);
+    } catch (error) {
+      return res.status(400).json({
+        error: error.message || "Avatar upload failed.",
+      });
+    }
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({
+      error: "No profile changes were provided.",
+    });
+  }
+
+  const { data: profile, error } = await supabaseAdmin
+    .from("users")
+    .update(updates)
+    .eq("id", req.user.id)
+    .select(profileSelect)
+    .single();
+
+  if (error) {
+    return res.status(400).json({ error: error.message });
+  }
+
+  res.json({
+    user: {
+      id: req.user.id,
+      email: req.user.email,
+      profile,
+    },
+    profile,
   });
 });
 

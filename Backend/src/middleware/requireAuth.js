@@ -27,8 +27,9 @@ async function requireAuth(req, res, next) {
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from("users")
-    .select("id, username, email, role, created_at, updated_at")
-    .eq("id", user.id)
+.select(
+  "id, username, email, display_name, bio, avatar_url, role, created_at, updated_at"
+)    .eq("id", user.id)
     .maybeSingle();
 
   if (profileError) {
