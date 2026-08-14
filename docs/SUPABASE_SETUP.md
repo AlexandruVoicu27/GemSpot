@@ -79,6 +79,7 @@ MAX_GAME_SIZE_BYTES="262144000"
 SCANNER_MODE="required"
 CLOUDMERSIVE_API_KEY="your-cloudmersive-api-key"
 CLOUDMERSIVE_SCAN_ENDPOINT="https://api.cloudmersive.com/virus/scan/file/advanced"
+CLOUDMERSIVE_SCANNING_ENABLED="true"
 CLOUDMERSIVE_ALLOW_EXECUTABLES="true"
 CLOUDMERSIVE_ALLOW_SCRIPTS="true"
 CLOUDMERSIVE_ALLOW_PASSWORD_PROTECTED_FILES="false"
@@ -91,4 +92,6 @@ The archive is first written to the private quarantine directory. Cloudmersive s
 
 For local UI-only testing, set `SCANNER_MODE="mock"`. Never use mock mode in production.
 
-Administrator accounts can explicitly mark a trusted upload to bypass Cloudmersive. The backend only accepts this flag from `ADMIN` profiles, records the bypass in `scanner_output`, and still keeps the file private until the game is published.
+Cloudmersive scanning can be turned on or off from the backend settings API. When it is off, new uploads stay in quarantine and move to `MANUAL_REVIEW` so an admin/moderator can download, scan manually, then approve or reject them.
+Settings endpoints: `GET /api/uploads/settings` for admins/moderators, `PATCH /api/uploads/settings/cloudmersive` with `{ "enabled": true | false }` for admins.
+Manual review download endpoint: `GET /api/uploads/review/:fileId/download` for admins/moderators.

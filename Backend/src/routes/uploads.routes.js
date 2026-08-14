@@ -25,23 +25,108 @@ function safeFileName(fileName) {
   return cleaned.slice(-120) || "game-build";
 }
 
-function isAdmin(user) {
-  return user && user.profile && user.profile.role === "ADMIN";
-}
-
 function isModerator(user) {
   return ["ADMIN", "MODERATOR"].includes(user && user.profile && user.profile.role);
 }
 
-function wantsAdminScanBypass(req) {
-  return ["1", "true", "yes", "on"].includes(
-    String(req.body && req.body.adminBypassScan || "").toLowerCase()
+const cloudScanSettingKey = "cloudmersive_scanning_enabled";
+
+function parseBoolean(value, defaultValue = false) {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["1", "true", "yes", "on"].includes(normalized)) return true;
+    if (["0", "false", "no", "off"].includes(normalized)) return false;
+  }
+
+  return defaultValue;
+}
+
+function defaultCloudScanEnabled() {
+  return parseBoolean(process.env.CLOUDMERSIVE_SCANNING_ENABLED, true);
+}
+
+function isMissingSettingsTable(error) {
+  return Boolean(
+    error &&
+      (error.code === "42P01" || String(error.message || "").includes("app_settings"))
   );
+}
+
+async function getCloudScanSettings() {
+  const fallback = defaultCloudScanEnabled();
+  const result = await supabaseAdmin
+    .from("app_settings")
+    .select("value, updated_by, updated_at")
+    .eq("key", cloudScanSettingKey)
+    .maybeSingle();
+
+  if (result.error) {
+    if (isMissingSettingsTable(result.error)) {
+      return {
+        cloudScanEnabled: fallback,
+        source: "env-fallback",
+        missingSettingsTable: true,
+      };
+    }
+
+    throw result.error;
+  }
+
+  if (!result.data) {
+    return {
+      cloudScanEnabled: fallback,
+      source: "env-default",
+      missingSettingsTable: false,
+    };
+  }
+
+  return {
+    cloudScanEnabled: parseBoolean(result.data.value, fallback),
+    source: "database",
+    updatedBy: result.data.updated_by || null,
+    updatedAt: result.data.updated_at || null,
+    missingSettingsTable: false,
+  };
+}
+
+async function setCloudScanEnabled(enabled, adminUser) {
+  const result = await supabaseAdmin
+    .from("app_settings")
+    .upsert(
+      {
+        key: cloudScanSettingKey,
+        value: enabled,
+        updated_by: adminUser.id,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "key" }
+    )
+    .select("value, updated_by, updated_at")
+    .single();
+
+  if (result.error) throw result.error;
+
+  return {
+    cloudScanEnabled: parseBoolean(result.data.value, enabled),
+    source: "database",
+    updatedBy: result.data.updated_by || null,
+    updatedAt: result.data.updated_at || null,
+  };
 }
 
 function requireModerator(req, res, next) {
   if (!isModerator(req.user)) {
     return res.status(403).json({ error: "Moderator access required." });
+  }
+
+  next();
+}
+
+function requireAdmin(req, res, next) {
+  if (!req.user || !req.user.profile || req.user.profile.role !== "ADMIN") {
+    return res.status(403).json({ error: "Administrator access required." });
   }
 
   next();
@@ -149,31 +234,18 @@ async function releaseApprovedFile(fileRecord) {
   await fsp.unlink(fileRecord.quarantine_path).catch(() => {});
 }
 
-async function processAdminBypass(fileRecord, adminUser) {
+async function queueForManualReview(fileRecord, reason) {
   if (!fileRecord || !fileRecord.quarantine_path) return;
 
   try {
     const sha256 = await hashUploadFile(fileRecord.quarantine_path);
 
     await updateFile(fileRecord.id, {
-      scan_status: "APPROVED",
+      scan_status: "MANUAL_REVIEW",
       sha256,
-      scanner_output: [
-        "Cloudmersive scan bypassed by ADMIN account.",
-        "Admin user id: " + (adminUser && adminUser.id || "unknown"),
-        "Admin email: " + (adminUser && adminUser.email || "unknown"),
-      ].join("\n"),
+      scanner_output: [reason, "SHA-256: " + sha256].filter(Boolean).join("\n"),
       scanned_at: new Date().toISOString(),
     });
-
-    const refreshed = await supabaseAdmin
-      .from("game_files")
-      .select("*")
-      .eq("id", fileRecord.id)
-      .single();
-
-    if (refreshed.error) throw refreshed.error;
-    await releaseApprovedFile(refreshed.data);
   } catch (error) {
     await updateFile(fileRecord.id, {
       scan_status: "SCAN_ERROR",
@@ -216,7 +288,23 @@ async function processUpload(fileRecord) {
   }
 }
 
+
+async function processUploadByCurrentSettings(fileRecord) {
+  const scanSettings = await getCloudScanSettings();
+
+  if (scanSettings.cloudScanEnabled) {
+    await processUpload(fileRecord);
+    return scanSettings;
+  }
+
+  await queueForManualReview(
+    fileRecord,
+    "Cloudmersive scanning is disabled by an administrator; queued for manual review."
+  );
+  return scanSettings;
+}
 async function createUpload(req, res) {
+
   if (!requireSupabaseConfig(res)) return;
 
   if (!req.file) {
@@ -226,7 +314,6 @@ async function createUpload(req, res) {
   const title = String(req.body.title || "").trim().slice(0, 120);
   const description = String(req.body.description || "").trim().slice(0, 4000);
   const genre = String(req.body.genre || "").trim().slice(0, 60);
-  const adminBypassScan = wantsAdminScanBypass(req);
 
   if (title.length < 2 || description.length < 10) {
     await fsp.unlink(req.file.path).catch(() => {});
@@ -235,10 +322,6 @@ async function createUpload(req, res) {
     });
   }
 
-  if (adminBypassScan && !isAdmin(req.user)) {
-    await fsp.unlink(req.file.path).catch(() => {});
-    return res.status(403).json({ error: "Only administrators can bypass malware scanning." });
-  }
 
   try {
     const slug = await uniqueSlug(title);
@@ -280,18 +363,17 @@ async function createUpload(req, res) {
       file_name: req.file.originalname,
     };
 
-    if (adminBypassScan) {
-      setImmediate(() => processAdminBypass(queuedFile, req.user));
-    } else {
-      setImmediate(() => processUpload(queuedFile));
-    }
+    const scanSettings = await getCloudScanSettings();
+
+    setImmediate(() => processUploadByCurrentSettings(queuedFile));
 
     return res.status(202).json({
       game: gameResult.data,
       file: fileResult.data,
-      message: adminBypassScan
-        ? "Admin upload received. Malware scan bypassed and file is being released."
-        : "Upload received. GemSpot is scanning it before release.",
+      scanSettings,
+      message: scanSettings.cloudScanEnabled
+        ? "Upload received. GemSpot is scanning it before release."
+        : "Upload received. Cloudmersive scanning is off, so it is queued for manual review.",
     });
   } catch (error) {
     await fsp.unlink(req.file.path).catch(() => {});
@@ -313,6 +395,63 @@ router.post(
   createUpload
 );
 
+
+router.get("/settings", requireAuth, requireModerator, async (_req, res) => {
+  if (!requireSupabaseConfig(res)) return;
+
+  try {
+    const settings = await getCloudScanSettings();
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ error: error.message || "Could not load upload settings." });
+  }
+});
+
+router.patch("/settings/cloudmersive", requireAuth, requireAdmin, async (req, res) => {
+  if (!requireSupabaseConfig(res)) return;
+
+  if (!req.body || req.body.enabled == null) {
+    return res.status(400).json({ error: "enabled is required." });
+  }
+
+  try {
+    const settings = await setCloudScanEnabled(parseBoolean(req.body.enabled, false), req.user);
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ error: error.message || "Could not update Cloudmersive scanning." });
+  }
+});
+
+router.get("/review/:fileId/download", requireAuth, requireModerator, async (req, res) => {
+  if (!requireSupabaseConfig(res)) return;
+
+  const result = await supabaseAdmin
+    .from("game_files")
+    .select("id, file_name, quarantine_path, scan_status, game:games(id, title, slug)")
+    .eq("id", req.params.fileId)
+    .maybeSingle();
+
+  if (result.error) return res.status(500).json({ error: result.error.message });
+  if (!result.data) return res.status(404).json({ error: "Upload not found." });
+  if (result.data.scan_status !== "MANUAL_REVIEW") {
+    return res.status(400).json({ error: "Only manual-review uploads can be downloaded from quarantine." });
+  }
+  if (!result.data.quarantine_path) {
+    return res.status(404).json({ error: "Quarantine file is not available." });
+  }
+
+  const resolvedPath = path.resolve(result.data.quarantine_path);
+  if (!resolvedPath.startsWith(quarantineDir + path.sep)) {
+    return res.status(500).json({ error: "Quarantine path is invalid." });
+  }
+
+  try {
+    await fsp.access(resolvedPath, fs.constants.R_OK);
+    res.download(resolvedPath, safeFileName(result.data.file_name));
+  } catch (_error) {
+    res.status(404).json({ error: "Quarantine file is missing." });
+  }
+});
 router.get("/review", requireAuth, requireModerator, async (req, res) => {
   if (!requireSupabaseConfig(res)) return;
 
@@ -434,7 +573,7 @@ async function resumePendingUploads() {
   }
 
   for (const file of result.data || []) {
-    setImmediate(() => processUpload(file));
+    setImmediate(() => processUploadByCurrentSettings(file));
   }
 }
 
@@ -442,5 +581,3 @@ router.processUpload = processUpload;
 router.resumePendingUploads = resumePendingUploads;
 
 module.exports = router;
-
-

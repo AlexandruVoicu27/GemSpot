@@ -123,3 +123,11 @@ model Review {
   @@index([gameId])
   @@map("reviews")
 }
+model AppSetting {
+  key       String   @id
+  value     Json?
+  updatedBy String?  @map("updated_by") @db.Uuid
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("app_settings")
+}
