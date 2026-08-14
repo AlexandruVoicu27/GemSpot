@@ -35,7 +35,9 @@ async function apiFetch(path, options = {}) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(data?.error || "API request failed");
+    const error = new Error(data?.error || "API request failed");
+    error.code = data?.code;
+    throw error;
   }
 
   return data;
@@ -81,4 +83,82 @@ export async function getCurrentUser() {
 
 export async function getGames() {
   return apiFetch("/games");
+}
+
+export async function updateProfile(profileData) {
+  return apiFetch("/auth/profile", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(profileData),
+  });
+}
+
+
+export async function uploadGame({ title, description, genre, gameFile }) {
+  const formData = new FormData();
+  formData.append("title", title);
+  formData.append("description", description);
+  if (genre) formData.append("genre", genre);
+  formData.append("gameFile", gameFile);
+
+  return apiFetch("/uploads/games", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export async function getUploadStatus(fileId) {
+  return apiFetch("/uploads/" + fileId);
+}
+
+export async function getUploadSettings() {
+  return apiFetch("/uploads/settings");
+}
+
+export async function updateCloudmersiveScanning(enabled) {
+  return apiFetch("/uploads/settings/cloudmersive", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ enabled }),
+  });
+}
+
+export async function getManualReviewQueue() {
+  return apiFetch("/uploads/review");
+}
+
+export async function reviewUpload(fileId, decision, note = "") {
+  return apiFetch("/uploads/" + fileId + "/review", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ decision, note }),
+  });
+}
+
+export async function downloadManualReviewFile(fileId, filename = "game-upload") {
+  const authHeaders = await getAuthHeaders();
+  const response = await fetch(API_URL + "/uploads/review/" + fileId + "/download", {
+    headers: authHeaders,
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    throw new Error(data?.error || "Could not download review file");
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }

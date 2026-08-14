@@ -99,3 +99,28 @@ alter table public.games enable row level security;
 alter table public.game_files enable row level security;
 alter table public.game_claims enable row level security;
 alter table public.reviews enable row level security;
+
+
+-- Secure upload lifecycle fields. Files remain in quarantine until scan_status becomes APPROVED.
+alter table public.game_files add column if not exists storage_path text;
+alter table public.game_files add column if not exists quarantine_path text;
+alter table public.game_files add column if not exists scan_status text not null default 'PENDING';
+alter table public.game_files add column if not exists sha256 text;
+alter table public.game_files add column if not exists scanner_output text;
+alter table public.game_files add column if not exists scanned_at timestamp(3);
+alter table public.game_files add column if not exists review_note text;
+
+create index if not exists game_files_scan_status_idx on public.game_files(scan_status);
+-- Admin-controlled upload scanning settings.
+create table if not exists public.app_settings (
+  key text primary key,
+  value jsonb,
+  updated_by uuid,
+  updated_at timestamp(3) not null default current_timestamp
+);
+
+insert into public.app_settings (key, value)
+values ('cloudmersive_scanning_enabled', 'true'::jsonb)
+on conflict (key) do nothing;
+
+alter table public.app_settings enable row level security;

@@ -5,12 +5,13 @@ const authRoutes = require("./routes/auth.routes");
 const express = require("express");
 const cors = require("cors");
 const gamesRoutes = require("./routes/games.routes");
+const uploadsRoutes = require("./routes/uploads.routes");
 const requireAuth = require("./middleware/requireAuth");
 
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "5mb" }));
   
 app.use("/api/auth", authRoutes);
 app.get("/api/auth/me", requireAuth, (req, res) => {
@@ -26,9 +27,11 @@ app.get("/api/me", requireAuth, (req, res) => {
 });
 
 app.use("/api/games", gamesRoutes);
+app.use("/api/uploads", uploadsRoutes);
 
 const port = process.env.PORT || 3000;
 
 app.listen(port, () => {
   console.log(`GemSpot API running on http://localhost:${port}`);
+  uploadsRoutes.resumePendingUploads();
 });
