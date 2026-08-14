@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { getUploadStatus, uploadGame } from "./api";
+import { getManualReviewQueue, getUploadSettings, getUploadStatus, updateCloudmersiveScanning, uploadGame } from "./api";
 import {
   ArrowLeft,
   CheckCircle2,
   Clock3,
   ImagePlus,
   LockKeyhole,
+  Power,
+  RefreshCw,
   Save,
   Trash2,
   ShieldCheck,
@@ -35,10 +37,105 @@ function getInitials(value) {
     .toUpperCase();
 }
 
+function AdminScannerPanel({ profile }) {
+  const role = profile?.role || "USER";
+  const canViewScanner = role === "ADMIN";
+  const canToggleScanner = role === "ADMIN";
+  const [settings, setSettings] = useState(null);
+  const [queueCount, setQueueCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [notice, setNotice] = useState("");
+
+  const loadScannerState = async () => {
+    setIsLoading(true);
+    setNotice("");
+
+    try {
+      const [settingsData, queueData] = await Promise.all([
+        getUploadSettings(),
+        getManualReviewQueue(),
+      ]);
+      setSettings(settingsData);
+      setQueueCount(Array.isArray(queueData) ? queueData.length : 0);
+    } catch (error) {
+      setNotice(error.message || "Could not load scanner settings.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (canViewScanner) loadScannerState();
+  }, [canViewScanner]);
+
+  if (!canViewScanner) return null;
+
+  const isEnabled = Boolean(settings?.cloudScanEnabled);
+
+  const handleToggle = async () => {
+    if (!canToggleScanner) return;
+
+    setIsSaving(true);
+    setNotice("");
+
+    try {
+      const updated = await updateCloudmersiveScanning(!isEnabled);
+      setSettings(updated);
+      setNotice(
+        updated.cloudScanEnabled
+          ? "Cloudmersive is ON. New uploads will be scanned automatically."
+          : "Cloudmersive is OFF. New uploads will go to manual review."
+      );
+      const queueData = await getManualReviewQueue();
+      setQueueCount(Array.isArray(queueData) ? queueData.length : 0);
+    } catch (error) {
+      setNotice(error.message || "Could not update scanner setting.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <section id="website-settings" className="scanner-admin-card">
+      <div className="section-mini">
+        <ShieldCheck size={18} />
+        <strong>Website Settings</strong>
+      </div>
+
+      <div className={"scanner-status " + (isEnabled ? "enabled" : "disabled")}>
+        <span>{isLoading ? "Loading..." : isEnabled ? "Cloudmersive ON" : "Manual review mode"}</span>
+        <small>{queueCount} uploads waiting for manual review</small>
+      </div>
+
+      <div className="scanner-admin-actions">
+        {canToggleScanner && (
+          <button type="button" onClick={handleToggle} disabled={isSaving || isLoading}>
+            <Power size={16} />
+            {isSaving ? "Saving..." : isEnabled ? "Turn scanner OFF" : "Turn scanner ON"}
+          </button>
+        )}
+        <button type="button" className="secondary" onClick={loadScannerState} disabled={isLoading || isSaving}>
+          <RefreshCw size={16} />
+          Refresh
+        </button>
+      </div>
+
+      {notice && <p className="scanner-admin-notice">{notice}</p>}
+      {!canToggleScanner && <p className="scanner-admin-notice">Moderators can view this status. Only admins can change it.</p>}
+    </section>
+  );
+}
+
 export default function ProfilePage({ accountLabel, user, profile, requireAccount, onEdit, onUpload }) {
   const displayName = getDisplayName(accountLabel, user, profile);
   const email = user?.email || "";
   const avatarUrl = getAvatarUrl(user, profile);
+  const isAdmin = profile?.role === "ADMIN";
+
+  const openWebsiteSettings = () => {
+    document.getElementById("website-settings")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <>
@@ -57,6 +154,11 @@ export default function ProfilePage({ accountLabel, user, profile, requireAccoun
         <div className="profile-actions">
           <button onClick={onEdit}>Edit Profile</button>
           <button className="secondary" onClick={onUpload}>Upload Game</button>
+          {isAdmin && (
+            <button className="website-settings-button" onClick={openWebsiteSettings}>
+              Website Settings
+            </button>
+          )}
         </div>
       </section>
 
@@ -91,6 +193,8 @@ export default function ProfilePage({ accountLabel, user, profile, requireAccoun
               {email && <span>{email}</span>}
             </div>
           </section>
+
+          <AdminScannerPanel profile={profile} />
 
           <section className="creator-card">
             <span className="eyebrow">Creator Console</span>
@@ -263,8 +367,7 @@ export function EditProfilePage({ accountLabel, user, profile, onBack, onSaved }
 
 
 export function UploadPage({ onBack, profile }) {
-  const isAdmin = profile?.role === "ADMIN";
-  const [form, setForm] = useState({ title: "", description: "", genre: "", gameFile: null, adminBypassScan: false });
+  const [form, setForm] = useState({ title: "", description: "", genre: "", gameFile: null });
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -330,7 +433,7 @@ export function UploadPage({ onBack, profile }) {
       setUploadId(result.file.id);
       setScanStatus(result.file.scan_status);
       setNotice(result.message);
-      setForm({ title: "", description: "", genre: "", gameFile: null, adminBypassScan: false });
+      setForm({ title: "", description: "", genre: "", gameFile: null });
       event.target.reset();
     } catch (uploadError) {
       setError(uploadError.message);
@@ -369,19 +472,6 @@ export function UploadPage({ onBack, profile }) {
             <input name="gameFile" type="file" accept=".zip,.7z,.rar,.tar,.gz,.tgz" onChange={handleChange} required />
             <small>ZIP, 7Z, RAR, TAR, GZ, or TGZ. Maximum 250MB.</small>
           </label>
-
-          {isAdmin && (
-            <label className="admin-bypass-toggle">
-              <input
-                name="adminBypassScan"
-                type="checkbox"
-                checked={form.adminBypassScan}
-                onChange={handleChange}
-              />
-              <span>Administrator trusted upload: bypass Cloudmersive scan</span>
-            </label>
-          )}
-
           {error && <p className="auth-error">{error}</p>}
           {notice && <p className="edit-notice">{notice}</p>}
 
@@ -396,7 +486,7 @@ export function UploadPage({ onBack, profile }) {
           <div className="upload-status-list">
             <span><CheckCircle2 size={17} />Account required</span>
             <span><ShieldCheck size={17} />Quarantine storage</span>
-            <span><ShieldCheck size={17} />{isAdmin && form.adminBypassScan ? "Admin trusted upload" : "Cloudmersive malware scan"}</span>
+            <span><ShieldCheck size={17} />Cloudmersive scan or manual queue</span>
             <span><ShieldCheck size={17} />Policy review gates</span>
             <span><Clock3 size={17} />Manual review if suspicious</span>
           </div>
