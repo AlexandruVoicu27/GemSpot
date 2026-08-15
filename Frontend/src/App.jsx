@@ -1,6 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { clearAuthToken, getCurrentUser, getGames, login, signup, updateProfile } from "./api";
-import ProfilePage, { EditProfilePage, UploadPage } from "./Pages";
+import ProfilePage from "./pages/ProfilePage";
+import EditProfilePage from "./pages/EditProfilePage";
+import UploadPage from "./pages/UploadPage";
+import ModeratorReviewPage from "./pages/ModeratorReviewPage";
+import ProjectsPage from "./pages/ProjectsPage";
+import AdminManagementPage from "./pages/AdminManagementPage";
 import {
   ArrowLeft,
   Bell,
@@ -128,6 +133,10 @@ const isAuthenticated = Boolean(user);
   const isProfilePage = page === "profile" && isAuthenticated;
   const isEditProfilePage = page === "edit-profile" && isAuthenticated;
   const isUploadPage = page === "upload" && isAuthenticated;
+  const isProjectsPage = page === "projects" && isAuthenticated;
+  const isAdminPage = page === "admin" && isAuthenticated && profile?.role === "ADMIN";
+  const canModerate = ["ADMIN", "MODERATOR"].includes(profile?.role);
+  const isReviewPage = page === "moderation" && isAuthenticated && canModerate;
 
 
   const visibleGames = useMemo(() => {
@@ -164,7 +173,37 @@ const isAuthenticated = Boolean(user);
     setAuthPage(null);
   };
 
+  // Opens the projects page for the current profile.
+  const handleStartProjects = () => {
+    setPage("projects");
+    setAuthPage(null);
+    setGateNotice("");
+  };
 
+  // Opens the moderator review page for authorized users.
+  const handleStartModeration = () => {
+    if (!isAuthenticated || !canModerate) {
+      setGateNotice("Only admins and moderators can review uploads.");
+      return;
+    }
+
+    setPage("moderation");
+    setAuthPage(null);
+    setGateNotice("");
+  };
+
+
+  // Opens the administrator management page for admins.
+  const handleStartAdmin = () => {
+    if (!isAuthenticated || profile?.role !== "ADMIN") {
+      setGateNotice("Only admins can manage users and games.");
+      return;
+    }
+
+    setPage("admin");
+    setAuthPage(null);
+    setGateNotice("");
+  };
   const handleAuthSubmit = async (event) => {
     event.preventDefault();
     setAuthError("");
@@ -362,6 +401,22 @@ return (
             </button>
           </div>
         </section>
+      ) : isAdminPage ? (
+        <AdminManagementPage
+          onBack={() => setPage("profile")}
+          currentUserId={user?.id}
+        />
+      ) : isProjectsPage ? (
+        <ProjectsPage
+          profile={profile}
+          accountLabel={accountLabel}
+          onBack={() => setPage("profile")}
+        />
+      ) : isReviewPage ? (
+        <ModeratorReviewPage
+          onBack={() => setPage("profile")}
+          profile={profile}
+        />
       ) : isEditProfilePage ? (
         <EditProfilePage
           accountLabel={accountLabel}
@@ -380,6 +435,9 @@ return (
           requireAccount={requireAccount}
           onEdit={() => setPage("edit-profile")}
           onUpload={handleStartUpload}
+          onReview={handleStartModeration}
+          onAdmin={handleStartAdmin}
+          onProjects={handleStartProjects}
         />
       ) : (
         <>

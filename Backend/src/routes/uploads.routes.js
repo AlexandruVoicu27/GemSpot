@@ -13,7 +13,7 @@ const quarantineDir = path.resolve(
   process.env.QUARANTINE_DIR || path.join(__dirname, "../../quarantine")
 );
 const storageBucket = process.env.GAME_STORAGE_BUCKET || "game-builds";
-const maxFileSize = Number(process.env.MAX_GAME_SIZE_BYTES || 250 * 1024 * 1024);
+const maxFileSize = Number(process.env.MAX_GAME_SIZE_BYTES || 1024 * 1024 * 1024);
 const allowedExtensions = new Set([".zip", ".7z", ".rar", ".tar", ".gz", ".tgz"]);
 
 fs.mkdirSync(quarantineDir, { recursive: true });

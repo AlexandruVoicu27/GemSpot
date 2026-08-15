@@ -37,6 +37,7 @@ model User {
   username     String      @unique
   email        String      @unique
   role         UserRole    @default(USER)
+  isBanned     Boolean     @default(false) @map("is_banned")
   createdAt    DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")
   games        Game[]

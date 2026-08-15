@@ -42,7 +42,7 @@ function isEmailIdentifier(identifier) {
 
 
 const profileSelect =
-  "id, username, email, display_name, bio, avatar_url, role, created_at, updated_at";
+  "id, username, email, display_name, bio, avatar_url, role, is_banned, created_at, updated_at";
 
 const allowedAvatarTypes = {
   "image/png": "png",
@@ -260,6 +260,12 @@ router.post("/login", loginRateLimit, async (req, res) => {
     return res.status(400).json({ error: profileError.message });
   }
 
+  if (profile?.is_banned) {
+    return res.status(403).json({
+      code: "USER_BANNED",
+      error: "This account has been banned."
+    });
+  }
   // Frontendul va salva access_token si il va trimite ca Bearer token.
   res.json({
     user: data.user,

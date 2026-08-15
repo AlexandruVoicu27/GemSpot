@@ -6,6 +6,7 @@ const express = require("express");
 const cors = require("cors");
 const gamesRoutes = require("./routes/games.routes");
 const uploadsRoutes = require("./routes/uploads.routes");
+const adminRoutes = require("./routes/admin.routes");
 const requireAuth = require("./middleware/requireAuth");
 
 const app = express();
@@ -28,6 +29,7 @@ app.get("/api/me", requireAuth, (req, res) => {
 
 app.use("/api/games", gamesRoutes);
 app.use("/api/uploads", uploadsRoutes);
+app.use("/api/admin", adminRoutes);
 
 const port = process.env.PORT || 3000;
 

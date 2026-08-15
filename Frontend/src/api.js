@@ -85,6 +85,48 @@ export async function getGames() {
   return apiFetch("/games");
 }
 
+// Loads all projects owned by the authenticated creator.
+export async function getMyProjects() {
+  return apiFetch("/games/mine");
+}
+
+// Publishes a creator-owned game after its build was approved.
+export async function publishGame(gameId) {
+  return apiFetch(`/games/${gameId}/publish`, {
+    method: "POST",
+  });
+}
+
+// Archives a creator-owned or administrator-selected game.
+export async function deleteGame(gameId) {
+  return apiFetch(`/games/${gameId}`, {
+    method: "DELETE",
+  });
+}
+
+// Loads games visible to administrator accounts.
+export async function getAdminGames() {
+  return apiFetch("/admin/games");
+}
+
+// Loads users visible to administrator accounts.
+export async function getAdminUsers() {
+  return apiFetch("/admin/users");
+}
+
+// Bans one user through the administrator endpoint.
+export async function banUser(userId) {
+  return apiFetch(`/admin/users/${userId}/ban`, {
+    method: "POST",
+  });
+}
+
+// Removes one user's ban through the administrator endpoint.
+export async function unbanUser(userId) {
+  return apiFetch(`/admin/users/${userId}/unban`, {
+    method: "POST",
+  });
+}
 export async function updateProfile(profileData) {
   return apiFetch("/auth/profile", {
     method: "PATCH",

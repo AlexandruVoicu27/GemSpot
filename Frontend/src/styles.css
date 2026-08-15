@@ -1757,3 +1757,602 @@ textarea:disabled {
   border: 1px solid #705137;
   background: rgba(10, 8, 7, 0.5);
 }
+/* Moderator review workspace */
+.moderator-review-page {
+  display: grid;
+  gap: 22px;
+  padding: 30px 0 50px;
+}
+
+.review-page-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 18px;
+  border-bottom: 2px solid #443226;
+}
+
+.review-page-heading h1 {
+  margin: 8px 0;
+  color: #fff8ea;
+  font-size: clamp(2.4rem, 5vw, 4.8rem);
+  line-height: 0.95;
+}
+
+.review-page-heading p {
+  max-width: 720px;
+  margin: 0;
+  color: #c5b19e;
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+.review-settings-panel,
+.review-queue-panel,
+.review-detail-panel {
+  border: 2px solid #443226;
+  background:
+    linear-gradient(145deg, rgba(138, 223, 114, 0.08), transparent 45%),
+    #211814;
+}
+
+.review-settings-panel {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+}
+
+.review-settings-heading,
+.review-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.review-settings-heading h2 {
+  margin: 7px 0 0;
+  color: #fff8ea;
+}
+
+.review-settings-panel p,
+.review-settings-note {
+  margin: 0;
+  color: #b9a897;
+  line-height: 1.5;
+}
+
+.review-settings-row {
+  padding: 14px;
+  border: 1px solid #514033;
+  background: #17110f;
+}
+
+.review-settings-row div {
+  display: grid;
+  gap: 5px;
+}
+
+.review-settings-row strong {
+  color: #fff8ea;
+}
+
+.review-settings-row small {
+  color: #a89583;
+}
+
+.scanner-mode {
+  padding: 8px 10px;
+  border: 1px solid;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.scanner-mode.on {
+  border-color: #4f6c3e;
+  color: #aef18e;
+}
+
+.scanner-mode.off {
+  border-color: #8a6238;
+  color: #ffce70;
+}
+
+.scanner-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 76px;
+  padding: 6px 9px;
+  border: 2px solid #100c0a;
+  color: #160f0b;
+  font-weight: 900;
+}
+
+.scanner-toggle.on {
+  background: #8adf72;
+}
+
+.scanner-toggle.off {
+  background: #f2a11e;
+}
+
+.scanner-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.scanner-toggle-knob {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #160f0b;
+  border-radius: 50%;
+  background: #fff8ea;
+}
+
+.review-settings-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: max-content;
+  padding: 9px 12px;
+  border: 1px solid #705137;
+  background: #30241d;
+  color: #f4dfc5;
+}
+
+.review-workspace {
+  display: grid;
+  grid-template-columns: minmax(270px, 0.7fr) minmax(0, 1.7fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.review-queue-panel,
+.review-detail-panel {
+  min-width: 0;
+  padding: 20px;
+}
+
+.review-panel-heading,
+.review-detail-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.review-panel-heading h2,
+.review-detail-heading h2 {
+  margin: 7px 0;
+  color: #fff8ea;
+}
+
+.review-refresh-button {
+  padding: 9px;
+  border: 1px solid #705137;
+  background: #30241d;
+  color: #f4dfc5;
+}
+
+.review-queue-item {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 13px;
+  border: 1px solid #514033;
+  background: #17110f;
+  color: #f4dfc5;
+  text-align: left;
+}
+
+.review-queue-item.selected {
+  border-color: #8adf72;
+  background: rgba(138, 223, 114, 0.12);
+}
+
+.review-queue-item strong {
+  color: #fff8ea;
+}
+
+.review-queue-item span,
+.review-queue-item small {
+  overflow: hidden;
+  color: #a89583;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-status-badge {
+  padding: 8px 10px;
+  border: 1px solid #f2a11e;
+  color: #ffce70;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.review-facts {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 22px 0;
+}
+
+.review-facts div {
+  display: grid;
+  gap: 6px;
+  padding: 13px;
+  border: 1px solid #514033;
+  background: #17110f;
+}
+
+.review-facts small {
+  color: #a89583;
+}
+
+.review-facts strong {
+  color: #fff8ea;
+}
+
+.scanner-output {
+  padding: 14px;
+  border: 1px solid #514033;
+  background: #120e0c;
+}
+
+.scanner-output pre {
+  max-height: 180px;
+  overflow: auto;
+  color: #c9eebc;
+  white-space: pre-wrap;
+}
+
+.review-manual-step {
+  display: flex;
+  gap: 12px;
+  margin: 20px 0;
+  color: #8adf72;
+}
+
+.review-manual-step strong {
+  color: #fff8ea;
+}
+
+.review-manual-step p {
+  margin: 6px 0 0;
+  color: #b9a897;
+  line-height: 1.5;
+}
+
+.download-review-button,
+.approve-review-button,
+.reject-review-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 10px 14px;
+  border: 2px solid #100c0a;
+  font-weight: 900;
+}
+
+.download-review-button,
+.approve-review-button {
+  background: #8adf72;
+  color: #160f0b;
+}
+
+.reject-review-button {
+  background: #9f4b42;
+  color: #fff8ea;
+}
+
+.review-note-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+  color: #f4dfc5;
+  font-weight: 800;
+}
+
+.review-note-field textarea {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #514033;
+  background: #17110f;
+  color: #fff8ea;
+  resize: vertical;
+}
+
+.review-decision-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.empty-review-state {
+  display: grid;
+  place-items: center;
+  min-height: 420px;
+  color: #a89583;
+  text-align: center;
+}
+
+.empty-review-state h2 {
+  margin-bottom: 0;
+  color: #fff8ea;
+}
+
+@media (max-width: 850px) {
+  .review-page-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .review-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .review-facts {
+    grid-template-columns: 1fr;
+  }
+}
+.project-status {
+  margin: 16px 0;
+  color: #a89583;
+  line-height: 1.5;
+}
+
+.project-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.project-publish-button,
+.project-delete-button,
+.admin-refresh-button,
+.admin-danger-button,
+.admin-ban-button,
+.admin-unban-button,
+.admin-tools-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 2px solid #100c0a;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.project-publish-button,
+.admin-tools-button,
+.admin-refresh-button,
+.admin-unban-button {
+  background: #8adf72;
+  color: #160f0b;
+}
+
+.project-delete-button,
+.admin-danger-button,
+.admin-ban-button {
+  background: #9f4b42;
+  color: #fff8ea;
+}
+
+.project-publish-button,
+.project-delete-button {
+  min-height: 40px;
+  padding: 9px 13px;
+}
+
+.project-publish-button:hover,
+.admin-tools-button:hover,
+.admin-refresh-button:hover,
+.admin-unban-button:hover {
+  background: #a9ef91;
+}
+
+.project-delete-button:hover,
+.admin-danger-button:hover,
+.admin-ban-button:hover {
+  background: #b85b50;
+}
+
+.project-publish-button:disabled,
+.project-delete-button:disabled,
+.admin-refresh-button:disabled,
+.admin-danger-button:disabled,
+.admin-ban-button:disabled,
+.admin-unban-button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.admin-management-page {
+  padding: 38px 0 70px;
+}
+
+.admin-management-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 26px;
+}
+
+.admin-management-heading h1 {
+  margin: 8px 0;
+  color: #fff8ea;
+}
+
+.admin-management-heading p {
+  margin: 0;
+  color: #a89583;
+}
+
+.admin-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.admin-refresh-button {
+  min-height: 42px;
+  padding: 10px 14px;
+}
+
+.admin-management-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.admin-management-card {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid #514033;
+  background: #211814;
+}
+
+.admin-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+  color: #f2a11e;
+}
+
+.admin-card-heading h2 {
+  margin: 6px 0 0;
+  color: #fff8ea;
+}
+
+.admin-list {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-list-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid #443226;
+  background: #17110f;
+}
+
+.admin-item-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: #8adf72;
+}
+
+.admin-item-copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.admin-item-copy strong {
+  overflow: hidden;
+  color: #fff8ea;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-item-copy span,
+.admin-item-copy small {
+  overflow: hidden;
+  color: #a89583;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-item-copy small {
+  color: #f2a11e;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.admin-danger-button,
+.admin-ban-button,
+.admin-unban-button {
+  min-height: 38px;
+  padding: 8px 11px;
+}
+
+.admin-status-badge {
+  padding: 6px 8px;
+  border: 1px solid #514033;
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.admin-status-badge.active {
+  border-color: #8adf72;
+  color: #8adf72;
+}
+
+.admin-status-badge.banned {
+  border-color: #df7b68;
+  color: #ff9c88;
+}
+
+.admin-current-account,
+.admin-empty-list {
+  color: #a89583;
+  font-size: 0.85rem;
+}
+
+.admin-message {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border: 1px solid #514033;
+}
+
+.admin-error {
+  color: #ff9c88;
+  border-color: #9f4b42;
+  background: rgba(159, 75, 66, 0.12);
+}
+
+.admin-notice {
+  color: #c9eebc;
+  border-color: #8adf72;
+  background: rgba(138, 223, 114, 0.1);
+}
+
+@media (max-width: 900px) {
+  .admin-management-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-management-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .admin-list-item {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .admin-list-item > button,
+  .admin-list-item > .admin-status-badge,
+  .admin-list-item > .admin-current-account {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
