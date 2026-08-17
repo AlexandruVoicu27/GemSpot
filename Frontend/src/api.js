@@ -37,6 +37,7 @@ async function apiFetch(path, options = {}) {
   if (!response.ok) {
     const error = new Error(data?.error || "API request failed");
     error.code = data?.code;
+    error.reason = data?.reason;
     throw error;
   }
 
@@ -115,9 +116,13 @@ export async function getAdminUsers() {
 }
 
 // Bans one user through the administrator endpoint.
-export async function banUser(userId) {
+export async function banUser(userId, reason) {
   return apiFetch(`/admin/users/${userId}/ban`, {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ reason }),
   });
 }
 

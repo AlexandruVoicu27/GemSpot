@@ -23,6 +23,8 @@ export default function AdminManagementPage({ onBack, currentUserId }) {
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [actingId, setActingId] = useState("");
+  const [banTarget, setBanTarget] = useState(null);
+  const [banReason, setBanReason] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -77,13 +79,54 @@ export default function AdminManagementPage({ onBack, currentUserId }) {
     }
   };
 
-  // Bans or unbans one account after an administrator confirms the action.
-  const handleToggleBan = async (user) => {
-    const action = user.is_banned ? "unban" : "ban";
+  // Opens the required reason dialog before a user is banned.
+  const openBanDialog = (user) => {
+    setBanTarget(user);
+    setBanReason("");
+    setError("");
+    setNotice("");
+  };
+
+  // Closes the ban dialog and clears its temporary form data.
+  const closeBanDialog = () => {
+    setBanTarget(null);
+    setBanReason("");
+  };
+
+  // Sends a confirmed ban with the administrator's written reason.
+  const confirmBan = async () => {
+    const reason = banReason.trim();
+
+    if (!banTarget || !reason) {
+      setError("Write a reason before banning this user.");
+      return;
+    }
+
+    setActingId("user-" + banTarget.id);
+    setError("");
+    setNotice("");
+
+    try {
+      const updatedUser = await banUser(banTarget.id, reason);
+
+      setUsers((currentUsers) =>
+        currentUsers.map((currentUser) =>
+          currentUser.id === banTarget.id ? updatedUser : currentUser
+        )
+      );
+      setNotice("The user was banned and the reason was saved.");
+      closeBanDialog();
+    } catch (banError) {
+      setError(banError.message || "Could not ban the user.");
+    } finally {
+      setActingId("");
+    }
+  };
+
+  // Unbans an account after the administrator confirms the action.
+  const handleUnban = async (user) => {
     const confirmed = window.confirm(
-      (user.is_banned ? "Unban " : "Ban ") +
-        (user.username || user.email) +
-        "?"
+      "Unban " + (user.username || user.email) + "?"
     );
 
     if (!confirmed) {
@@ -95,22 +138,16 @@ export default function AdminManagementPage({ onBack, currentUserId }) {
     setNotice("");
 
     try {
-      const updatedUser = user.is_banned
-        ? await unbanUser(user.id)
-        : await banUser(user.id);
+      const updatedUser = await unbanUser(user.id);
 
       setUsers((currentUsers) =>
         currentUsers.map((currentUser) =>
           currentUser.id === user.id ? updatedUser : currentUser
         )
       );
-      setNotice(
-        action === "ban"
-          ? "The user was banned."
-          : "The user can access the site again."
-      );
-    } catch (banError) {
-      setError(banError.message || "Could not update the user's ban.");
+      setNotice("The user can access the site again.");
+    } catch (unbanError) {
+      setError(unbanError.message || "Could not unban the user.");
     } finally {
       setActingId("");
     }
@@ -237,23 +274,25 @@ export default function AdminManagementPage({ onBack, currentUserId }) {
                       </span>
                       {isCurrentUser ? (
                         <span className="admin-current-account">You</span>
-                      ) : (
+                      ) : user.is_banned ? (
                         <button
-                          className={
-                            user.is_banned
-                              ? "admin-unban-button"
-                              : "admin-ban-button"
-                          }
+                          className="admin-unban-button"
                           type="button"
                           disabled={isActing}
-                          onClick={() => handleToggleBan(user)}
+                          onClick={() => handleUnban(user)}
                         >
                           <ShieldAlert size={16} />
-                          {isActing
-                            ? "Saving..."
-                            : user.is_banned
-                              ? "Unban"
-                              : "Ban"}
+                          {isActing ? "Saving..." : "Unban"}
+                        </button>
+                      ) : (
+                        <button
+                          className="admin-ban-button"
+                          type="button"
+                          disabled={isActing}
+                          onClick={() => openBanDialog(user)}
+                        >
+                          <ShieldAlert size={16} />
+                          Ban
                         </button>
                       )}
                     </article>
@@ -261,6 +300,55 @@ export default function AdminManagementPage({ onBack, currentUserId }) {
                 })}
               </div>
             )}
+          </section>
+        </div>
+      )}
+
+      {banTarget && (
+        <div className="modal-backdrop" role="presentation">
+          <section
+            className="confirm-dialog ban-reason-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ban-reason-title"
+          >
+            <h2 id="ban-reason-title">
+              Ban {banTarget.username || banTarget.email}?
+            </h2>
+            <p>
+              This reason will be shown to the user when they try to log in.
+            </p>
+
+            <label className="ban-reason-field">
+              Reason
+              <textarea
+                value={banReason}
+                onChange={(event) => setBanReason(event.target.value)}
+                maxLength={500}
+                placeholder="Explain why this account is being banned."
+                rows={5}
+              />
+              <small>{banReason.length}/500</small>
+            </label>
+
+            <div className="confirm-actions">
+              <button
+                className="back-button"
+                type="button"
+                onClick={closeBanDialog}
+              >
+                Cancel
+              </button>
+              <button
+                className="danger-button"
+                type="button"
+                disabled={!banReason.trim() || actingId === "user-" + banTarget.id}
+                onClick={confirmBan}
+              >
+                <Ban size={17} />
+                {actingId === "user-" + banTarget.id ? "Banning..." : "Ban user"}
+              </button>
+            </div>
           </section>
         </div>
       )}

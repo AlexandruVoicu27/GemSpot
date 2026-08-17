@@ -233,7 +233,14 @@ const isAuthenticated = Boolean(user);
       setAuthPassword("");
       setAuthPasswordConfirm("");
     } catch (error) {
-      setAuthError(error.message);
+      if (error.code === "USER_BANNED") {
+        setAuthError(
+          "Your account has been banned. Reason: " +
+            (error.reason || "No reason was provided.")
+        );
+      } else {
+        setAuthError(error.message);
+      }
     } finally {
       setIsAuthLoading(false);
     }
@@ -304,9 +311,18 @@ const isAuthenticated = Boolean(user);
       .then((data) => {
         if (data.user) setSession({ user: data.user, profile: data.user.profile });
       })
-      .catch(() => {
+      .catch((error) => {
         clearAuthToken();
         setSession(null);
+
+        if (error.code === "USER_BANNED") {
+          setAuthMode("login");
+          setAuthPage("login");
+          setAuthError(
+            "Your account has been banned. Reason: " +
+              (error.reason || "No reason was provided.")
+          );
+        }
       });
   }, []);
 

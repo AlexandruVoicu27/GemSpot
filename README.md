@@ -29,11 +29,3 @@ The first version should stay focused:
 - basic admin moderation
 
 Later features can include game jams, medals, collections, collaborator credits, reviewer reputation, and playtest rooms.
-
-## Collaboration
-
-This project uses Git branches. Keep `main` stable, and create separate branches for features or fixes.
-
-See `docs/GIT_WORKFLOW.md` before starting work.
-
-For Supabase setup, see `docs/SUPABASE_SETUP.md`.

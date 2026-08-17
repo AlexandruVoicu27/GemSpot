@@ -2356,3 +2356,44 @@ textarea:disabled {
     justify-self: start;
   }
 }
+
+.auth-error {
+  white-space: pre-line;
+}
+
+.ban-reason-dialog {
+  width: min(100%, 560px);
+}
+
+.ban-reason-dialog > p {
+  color: #a89583;
+  line-height: 1.5;
+}
+
+.ban-reason-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+  color: #f4dfc5;
+  font-weight: 800;
+}
+
+.ban-reason-field textarea {
+  width: 100%;
+  min-height: 130px;
+  padding: 12px;
+  border: 1px solid #514033;
+  background: #17110f;
+  color: #fff8ea;
+  resize: vertical;
+}
+
+.ban-reason-field textarea:focus {
+  border-color: #f2a11e;
+  outline: 2px solid rgba(242, 161, 30, 0.2);
+}
+
+.ban-reason-field small {
+  color: #a89583;
+  font-weight: 500;
+}

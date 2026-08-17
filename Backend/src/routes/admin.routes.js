@@ -62,7 +62,7 @@ router.get("/users", requireAuth, requireAdmin, async (req, res) => {
 
   const result = await supabaseAdmin
     .from("users")
-    .select("id, username, email, display_name, role, is_banned, created_at")
+    .select("id, username, email, display_name, role, is_banned, ban_reason, created_at")
     .order("created_at", { ascending: false });
 
   if (result.error) {
@@ -80,11 +80,26 @@ router.post("/users/:userId/ban", requireAuth, requireAdmin, async (req, res) =>
     return res.status(400).json({ error: "You cannot ban your own account." });
   }
 
+  const reason = String(req.body?.reason || "").trim();
+
+  if (!reason) {
+    return res.status(400).json({ error: "A ban reason is required." });
+  }
+
+  if (reason.length > 500) {
+    return res.status(400).json({
+      error: "The ban reason must be 500 characters or fewer.",
+    });
+  }
+
   const result = await supabaseAdmin
     .from("users")
-    .update({ is_banned: true })
+    .update({
+      is_banned: true,
+      ban_reason: reason,
+    })
     .eq("id", req.params.userId)
-    .select("id, username, email, display_name, role, is_banned, created_at")
+    .select("id, username, email, display_name, role, is_banned, ban_reason, created_at")
     .maybeSingle();
 
   if (result.error) {
@@ -104,9 +119,9 @@ router.post("/users/:userId/unban", requireAuth, requireAdmin, async (req, res) 
 
   const result = await supabaseAdmin
     .from("users")
-    .update({ is_banned: false })
+    .update({ is_banned: false, ban_reason: null })
     .eq("id", req.params.userId)
-    .select("id, username, email, display_name, role, is_banned, created_at")
+    .select("id, username, email, display_name, role, is_banned, ban_reason, created_at")
     .maybeSingle();
 
   if (result.error) {
