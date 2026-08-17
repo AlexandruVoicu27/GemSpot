@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { clearAuthToken, getCurrentUser, getGames, login, signup, updateProfile } from "./api";
+import { clearAuthToken, getCurrentUser, getGames, login, searchSite, signup, updateProfile } from "./api";
 import ProfilePage from "./pages/ProfilePage";
 import EditProfilePage from "./pages/EditProfilePage";
 import UploadPage from "./pages/UploadPage";
 import ModeratorReviewPage from "./pages/ModeratorReviewPage";
 import ProjectsPage from "./pages/ProjectsPage";
 import AdminManagementPage from "./pages/AdminManagementPage";
+import PublicProfilePage from "./pages/PublicProfilePage";
 import {
   ArrowLeft,
   Bell,
@@ -51,6 +52,9 @@ function App() {
 
 // Textul scris de user in bara de search.
   const [query, setQuery] = useState('');
+  const [searchResults, setSearchResults] = useState({ games: [], creators: [] });
+  const [isSearching, setIsSearching] = useState(false);
+  const [publicProfileUsername, setPublicProfileUsername] = useState("");
 
 // Ratingul selectat in zona de Quick Review.
   const [rating, setRating] = useState(4);
@@ -135,6 +139,8 @@ const isAuthenticated = Boolean(user);
   const isUploadPage = page === "upload" && isAuthenticated;
   const isProjectsPage = page === "projects" && isAuthenticated;
   const isAdminPage = page === "admin" && isAuthenticated && profile?.role === "ADMIN";
+  const isPublicProfilePage =
+    page === "public-profile" && Boolean(publicProfileUsername);
   const canModerate = ["ADMIN", "MODERATOR"].includes(profile?.role);
   const isReviewPage = page === "moderation" && isAuthenticated && canModerate;
 
@@ -162,6 +168,20 @@ const isAuthenticated = Boolean(user);
     return false;
   };
 
+  // Opens a public creator profile from a search result.
+  const handleOpenPublicProfile = (username) => {
+    setPublicProfileUsername(username);
+    setSearchResults({ games: [], creators: [] });
+    setQuery("");
+    setPage("public-profile");
+    setAuthPage(null);
+    setGateNotice("");
+  };
+
+  // Closes the search result panel without changing the current page.
+  const closeSearchResults = () => {
+    setSearchResults({ games: [], creators: [] });
+  };
   const handleStartUpload = () => {
     if (!isAuthenticated) {
       setGateNotice("Uploading a project needs a GemSpot account first.");
@@ -296,6 +316,45 @@ const isAuthenticated = Boolean(user);
   return data.profile;
 };
 
+  // Searches the database after the user pauses while typing.
+  useEffect(() => {
+    const searchTerm = query.trim();
+
+    if (searchTerm.length < 2) {
+      setSearchResults({ games: [], creators: [] });
+      setIsSearching(false);
+      return undefined;
+    }
+
+    let active = true;
+    const timeout = window.setTimeout(async () => {
+      setIsSearching(true);
+
+      try {
+        const result = await searchSite(searchTerm);
+
+        if (active) {
+          setSearchResults({
+            games: Array.isArray(result.games) ? result.games : [],
+            creators: Array.isArray(result.creators) ? result.creators : [],
+          });
+        }
+      } catch {
+        if (active) {
+          setSearchResults({ games: [], creators: [] });
+        }
+      } finally {
+        if (active) {
+          setIsSearching(false);
+        }
+      }
+    }, 300);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
+  }, [query]);
   useEffect(() => {
     getGames()
       .then((data) => {
@@ -341,14 +400,91 @@ return (
           </a>
 
           <div className="header-actions">
-            <label className="search-box">
-              <Search size={18} />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search games, creators, tags"
-              />
-            </label>
+            <div className="search-area">
+              <label className="search-box">
+                <Search size={18} />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search games, creators, tags"
+                  aria-label="Search games, creators, and tags"
+                />
+              </label>
+
+              {query.trim().length >= 2 && (
+                <div className="search-results" role="listbox">
+                  {isSearching && (
+                    <p className="search-results-status">Searching...</p>
+                  )}
+
+                  {!isSearching &&
+                    searchResults.creators.length === 0 &&
+                    searchResults.games.length === 0 && (
+                      <p className="search-results-status">
+                        No matching games or creators.
+                      </p>
+                    )}
+
+                  {!isSearching && searchResults.creators.length > 0 && (
+                    <div className="search-results-section">
+                      <span className="search-results-label">Creators</span>
+                      {searchResults.creators.map((creator) => (
+                        <button
+                          className="search-result-item"
+                          type="button"
+                          onClick={() =>
+                            handleOpenPublicProfile(creator.username)
+                          }
+                          key={creator.id}
+                        >
+                          <span className="search-result-icon">
+                            {creator.avatar_url ? (
+                              <img src={creator.avatar_url} alt="" />
+                            ) : (
+                              <UserPlus size={16} />
+                            )}
+                          </span>
+                          <span>
+                            <strong>
+                              {creator.display_name || creator.username}
+                            </strong>
+                            <small>@{creator.username}</small>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {!isSearching && searchResults.games.length > 0 && (
+                    <div className="search-results-section">
+                      <span className="search-results-label">Games</span>
+                      {searchResults.games.map((game) => (
+                        <button
+                          className="search-result-item"
+                          type="button"
+                          onClick={() => {
+                            setQuery(game.title);
+                            closeSearchResults();
+                            setPage("home");
+                          }}
+                          key={game.id}
+                        >
+                          <span className="search-result-icon">
+                            <Gamepad2 size={16} />
+                          </span>
+                          <span>
+                            <strong>{game.title}</strong>
+                            <small>
+                              {game.genre} · by {game.creator?.username}
+                            </small>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
             <button className="icon-button" aria-label="Notifications">
               <Bell size={19} />
             </button>
@@ -417,6 +553,11 @@ return (
             </button>
           </div>
         </section>
+      ) : isPublicProfilePage ? (
+        <PublicProfilePage
+          username={publicProfileUsername}
+          onBack={() => setPage("home")}
+        />
       ) : isAdminPage ? (
         <AdminManagementPage
           onBack={() => setPage("profile")}

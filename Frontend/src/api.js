@@ -87,6 +87,15 @@ export async function getGames() {
 }
 
 // Loads all projects owned by the authenticated creator.
+// Searches published games and public creator profiles.
+export async function searchSite(query) {
+  return apiFetch("/search?q=" + encodeURIComponent(query));
+}
+
+// Loads one public creator profile and their published games.
+export async function getPublicProfile(username) {
+  return apiFetch("/users/" + encodeURIComponent(username));
+}
 export async function getMyProjects() {
   return apiFetch("/games/mine");
 }
