@@ -40,6 +40,7 @@ function toGameCard(game) {
     slug: game.slug,
     creator: getCreatorName(game.creator),
     tag: game.genre || "Indie",
+    coverImage: game.cover_image_url || "",
     score: getAverageRating(game.reviews),
     plays: "0",
     reviews: game.reviews?.length || 0,
@@ -74,6 +75,7 @@ router.get("/", async (req, res) => {
         genre,
         status,
         created_at,
+        cover_image_url,
         creator:users(username),
         files:game_files(kind),
         reviews(id, rating)
@@ -107,6 +109,7 @@ router.get("/mine", requireAuth, async (req, res) => {
         genre,
         status,
         created_at,
+        cover_image_url,
         creator:users(username),
         files:game_files(kind, scan_status),
         reviews(id, rating)
@@ -247,6 +250,7 @@ router.get("/:slug", async (req, res) => {
         status,
         created_at,
         updated_at,
+        cover_image_url,
         creator:users(id, username),
         files:game_files(id, kind, file_name, url, size_bytes, created_at),
         reviews(id, rating, body, created_at, user:users(username))

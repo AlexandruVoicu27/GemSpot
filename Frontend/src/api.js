@@ -152,13 +152,16 @@ export async function updateProfile(profileData) {
 }
 
 
-export async function uploadGame({ title, description, genre, gameFile }) {
+export async function uploadGame({ title, description, genre, gameFile,coverImage }) {
   const formData = new FormData();
   formData.append("title", title);
   formData.append("description", description);
   if (genre) formData.append("genre", genre);
   formData.append("gameFile", gameFile);
-
+  
+  if (coverImage) {
+    formData.append("coverImage", coverImage);
+  }
   return apiFetch("/uploads/games", {
     method: "POST",
     body: formData,

@@ -32,6 +32,7 @@ router.get("/games", requireAuth, requireAdmin, async (req, res) => {
         slug,
         status,
         created_at,
+        cover_image_url,
         creator:users(id, username, email),
         files:game_files(kind, scan_status)
       `
@@ -50,6 +51,7 @@ router.get("/games", requireAuth, requireAdmin, async (req, res) => {
       slug: game.slug,
       status: game.status,
       created_at: game.created_at,
+      coverImage: game.cover_image_url || "",
       creator: Array.isArray(game.creator) ? game.creator[0] : game.creator,
       buildStatus: getBuildStatus(game.files),
     }))

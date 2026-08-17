@@ -38,7 +38,7 @@ router.get("/", async (req, res) => {
   const [gamesResult, creatorsResult] = await Promise.all([
     supabaseAdmin
       .from("games")
-      .select("id, title, slug, genre, creator:users(username, display_name)")
+      .select("id, title, slug, genre, cover_image_url, creator:users(username, display_name)")
       .eq("status", "PUBLISHED")
       .or("title.ilike." + pattern + ",genre.ilike." + pattern)
       .order("created_at", { ascending: false })
@@ -64,6 +64,7 @@ router.get("/", async (req, res) => {
       title: game.title,
       slug: game.slug,
       genre: game.genre || "Indie",
+      coverImage: game.cover_image_url || "",
       creator: toCreatorResult(game.creator),
     })),
     creators: creatorsResult.data || [],

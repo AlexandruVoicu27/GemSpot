@@ -15,6 +15,14 @@ const quarantineDir = path.resolve(
 const storageBucket = process.env.GAME_STORAGE_BUCKET || "game-builds";
 const maxFileSize = Number(process.env.MAX_GAME_SIZE_BYTES || 1024 * 1024 * 1024);
 const allowedExtensions = new Set([".zip", ".7z", ".rar", ".tar", ".gz", ".tgz"]);
+const coverStorageBucket =
+  process.env.GAME_COVERS_BUCKET || "Game Covers";
+
+const allowedCoverTypes = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+]);
 
 fs.mkdirSync(quarantineDir, { recursive: true });
 
@@ -141,15 +149,34 @@ const diskStorage = multer.diskStorage({
 
 const upload = multer({
   storage: diskStorage,
-  limits: { fileSize: maxFileSize },
+  limits: {
+    fileSize: maxFileSize,
+    files: 2,
+  },
   fileFilter: (_req, file, callback) => {
-    const extension = path.extname(file.originalname).toLowerCase();
+    if (file.fieldname === "gameFile") {
+      const extension = path.extname(file.originalname).toLowerCase();
 
-    if (!allowedExtensions.has(extension)) {
-      return callback(new Error("Upload a game archive: .zip, .7z, .rar, .tar, .gz, or .tgz."));
+      if (!allowedExtensions.has(extension)) {
+        return callback(
+          new Error("Upload a valid game archive.")
+        );
+      }
+
+      return callback(null, true);
     }
 
-    callback(null, true);
+    if (file.fieldname === "coverImage") {
+      if (!allowedCoverTypes.has(file.mimetype)) {
+        return callback(
+          new Error("Cover image must be PNG, JPG, or WebP.")
+        );
+      }
+
+      return callback(null, true);
+    }
+
+    callback(new Error("Unsupported upload field."));
   },
 });
 
@@ -307,16 +334,30 @@ async function createUpload(req, res) {
 
   if (!requireSupabaseConfig(res)) return;
 
-  if (!req.file) {
-    return res.status(400).json({ error: "Choose a game archive to upload." });
-  }
+ const gameFile = req.files?.gameFile?.[0];
+const coverFile = req.files?.coverImage?.[0];
+
+if (!gameFile) {
+  return res.status(400).json({
+    error: "Choose a game archive to upload.",
+  });
+}
+
+if (coverFile && coverFile.size > 5 * 1024 * 1024) {
+  await fsp.unlink(gameFile.path).catch(() => {});
+  await fsp.unlink(coverFile.path).catch(() => {});
+
+  return res.status(400).json({
+    error: "The cover image must be smaller than 5MB.",
+  });
+}
 
   const title = String(req.body.title || "").trim().slice(0, 120);
   const description = String(req.body.description || "").trim().slice(0, 4000);
   const genre = String(req.body.genre || "").trim().slice(0, 60);
 
   if (title.length < 2 || description.length < 10) {
-    await fsp.unlink(req.file.path).catch(() => {});
+    await fsp.unlink(gameFile.path).catch(() => {});
     return res.status(400).json({
       error: "Add a title and a description of at least 10 characters.",
     });
@@ -340,15 +381,30 @@ async function createUpload(req, res) {
 
     if (gameResult.error) throw gameResult.error;
 
+    const coverImageUrl = await uploadCoverImage(
+      coverFile,
+      gameResult.data.id
+    );
+
+    if (coverImageUrl) {
+      await supabaseAdmin
+        .from("games")
+        .update({
+          cover_image_url: coverImageUrl,
+        })
+        .eq("id", gameResult.data.id);
+    }
+
+
     const fileResult = await supabaseAdmin
       .from("game_files")
       .insert({
         game_id: gameResult.data.id,
         kind: "GAME_BUILD",
-        file_name: req.file.originalname,
+        file_name: gameFile.originalname,
         url: "",
-        size_bytes: req.file.size,
-        quarantine_path: req.file.path,
+        size_bytes: gameFile.size,
+        quarantine_path: gameFile.path,
         scan_status: "PENDING",
       })
       .select("id, game_id, file_name, size_bytes, scan_status, created_at")
@@ -358,9 +414,9 @@ async function createUpload(req, res) {
 
     const queuedFile = {
       ...fileResult.data,
-      quarantine_path: req.file.path,
+      quarantine_path: gameFile.path,
       game_id: gameResult.data.id,
-      file_name: req.file.originalname,
+      file_name: gameFile.originalname,
     };
 
     const scanSettings = await getCloudScanSettings();
@@ -376,25 +432,70 @@ async function createUpload(req, res) {
         : "Upload received. Cloudmersive scanning is off, so it is queued for manual review.",
     });
   } catch (error) {
-    await fsp.unlink(req.file.path).catch(() => {});
+    await fsp.unlink(gameFile.path).catch(() => {});
     return res.status(500).json({
       error: error.message || "Could not create the upload.",
     });
   }
 }
+// Uploads a game cover to Supabase Storage and returns its public URL.
+async function uploadCoverImage(coverFile, gameId) {
+  if (!coverFile) {
+    return null;
+  }
+
+  const extension =
+    coverFile.mimetype === "image/png"
+      ? "png"
+      : coverFile.mimetype === "image/webp"
+        ? "webp"
+        : "jpg";
+
+  const storagePath =
+    gameId + "/" + crypto.randomUUID() + "." + extension;
+
+  const imageBuffer = await fsp.readFile(coverFile.path);
+
+  const result = await supabaseAdmin.storage
+    .from(coverStorageBucket)
+    .upload(storagePath, imageBuffer, {
+      contentType: coverFile.mimetype,
+      upsert: false,
+    });
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  await fsp.unlink(coverFile.path).catch(() => {});
+
+  const publicUrl = supabaseAdmin.storage
+    .from(coverStorageBucket)
+    .getPublicUrl(storagePath);
+
+  return publicUrl.data.publicUrl;
+}
+
 
 router.post(
   "/games",
   requireAuth,
   (req, res, next) => {
-    upload.single("gameFile")(req, res, (error) => {
-      if (error) return res.status(400).json({ error: parseUploadError(error) });
+    upload.fields([
+      { name: "gameFile", maxCount: 1 },
+      { name: "coverImage", maxCount: 1 },
+    ])(req, res, (error) => {
+      if (error) {
+        return res.status(400).json({
+          error: parseUploadError(error),
+        });
+      }
+
       next();
     });
   },
   createUpload
 );
-
 
 router.get("/settings", requireAuth, requireModerator, async (_req, res) => {
   if (!requireSupabaseConfig(res)) return;
@@ -427,7 +528,7 @@ router.get("/review/:fileId/download", requireAuth, requireModerator, async (req
 
   const result = await supabaseAdmin
     .from("game_files")
-    .select("id, file_name, quarantine_path, scan_status, game:games(id, title, slug)")
+    .select("id, file_name, quarantine_path, scan_status, game:games(id, title, slug, cover_image_url)")
     .eq("id", req.params.fileId)
     .maybeSingle();
 
@@ -458,7 +559,7 @@ router.get("/review", requireAuth, requireModerator, async (req, res) => {
   const result = await supabaseAdmin
     .from("game_files")
     .select(
-      "id, game_id, file_name, size_bytes, scan_status, sha256, scanner_output, created_at, scanned_at, game:games(id, title, slug, creator_id)"
+      "id, game_id, file_name, size_bytes, scan_status, sha256, scanner_output, created_at, scanned_at, game:games(id, title, slug, creator_id, cover_image_url)"
     )
     .eq("scan_status", "MANUAL_REVIEW")
     .order("created_at", { ascending: true });

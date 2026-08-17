@@ -470,7 +470,11 @@ return (
                           key={game.id}
                         >
                           <span className="search-result-icon">
-                            <Gamepad2 size={16} />
+                            {game.coverImage ? (
+                              <img src={game.coverImage} alt="" />
+                            ) : (
+                              <Gamepad2 size={16} />
+                            )}
                           </span>
                           <span>
                             <strong>{game.title}</strong>
@@ -678,10 +682,19 @@ return (
             {!isLoadingGames && !gamesError && visibleGames.length === 0 && <p className="empty-state">No games match this filter yet.</p>}
             {visibleGames.map((game) => (
               <article className={`game-card ${game.palette}`} key={game.title}>
-                <div className="thumb">
+              <div className="thumb">
+                {game.coverImage ? (
+                  <img
+                    className="thumb-image"
+                    src={game.coverImage}
+                    alt={game.title + " cover"}
+                  />
+                ) : (
                   <Gamepad2 size={34} />
-                  <span>{game.tag}</span>
-                </div>
+                )}
+
+                <span>{game.tag}</span>
+              </div>
                 <div className="game-info">
                   <div>
                     <h3>{game.title}</h3>

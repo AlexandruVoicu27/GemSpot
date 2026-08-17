@@ -32,7 +32,7 @@ router.get("/:username", async (req, res) => {
 
   const gamesResult = await supabaseAdmin
     .from("games")
-    .select("id, title, slug, description, genre, status, created_at")
+    .select("id, title, slug, description, genre, status, created_at, cover_image_url")
     .eq("creator_id", profileResult.data.id)
     .eq("status", "PUBLISHED")
     .order("created_at", { ascending: false });

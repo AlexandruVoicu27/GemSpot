@@ -206,7 +206,14 @@ export default function AdminManagementPage({ onBack, currentUserId }) {
                 {games.map((game) => (
                   <article className="admin-list-item" key={game.id}>
                     <div className="admin-item-icon">
-                      <Gamepad2 size={19} />
+                      {game.coverImage ? (
+                        <img
+                          src={game.coverImage}
+                          alt={game.title + " cover"}
+                        />
+                      ) : (
+                        <Gamepad2 size={19} />
+                      )}
                     </div>
                     <div className="admin-item-copy">
                       <strong>{game.title}</strong>

@@ -302,6 +302,16 @@ export default function ModeratorReviewPage({ onBack, profile }) {
                 setError("");
               }}
             >
+              <span className="review-queue-cover">
+                {upload.game?.cover_image_url ? (
+                  <img
+                    src={upload.game.cover_image_url}
+                    alt={upload.game.title + " cover"}
+                  />
+                ) : (
+                  <FileArchive size={18} />
+                )}
+              </span>
               <strong>{upload.game?.title || "Untitled game"}</strong>
               <span>{upload.file_name}</span>
               <small>{formatBytes(upload.size_bytes)}</small>
@@ -320,6 +330,16 @@ export default function ModeratorReviewPage({ onBack, profile }) {
             <>
               <div className="review-detail-heading">
                 <div>
+                  <div className="review-game-cover">
+                    {selectedUpload.game?.cover_image_url ? (
+                      <img
+                        src={selectedUpload.game.cover_image_url}
+                        alt={selectedUpload.game.title + " cover"}
+                      />
+                    ) : (
+                      <FileArchive size={30} />
+                    )}
+                  </div>
                   <span className="eyebrow">Game upload</span>
                   <h2>{selectedUpload.game?.title || "Untitled game"}</h2>
                   <p>{selectedUpload.file_name}</p>

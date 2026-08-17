@@ -110,7 +110,14 @@ export default function PublicProfilePage({ username, onBack }) {
                 {games.map((game) => (
                   <article className="public-game-card" key={game.id}>
                     <div className="public-game-card-icon">
-                      <Gamepad2 size={30} />
+                      {game.cover_image_url ? (
+                        <img
+                          src={game.cover_image_url}
+                          alt={game.title + " cover"}
+                        />
+                      ) : (
+                        <Gamepad2 size={30} />
+                      )}
                     </div>
                     <div>
                       <span className="eyebrow">

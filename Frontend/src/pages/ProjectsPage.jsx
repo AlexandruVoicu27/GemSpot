@@ -138,7 +138,14 @@ export default function ProjectsPage({ profile, accountLabel, onBack }) {
                 key={project.id || project.slug}
               >
                 <div className="project-card-image">
-                  <Gamepad2 size={38} />
+                  {project.coverImage ? (
+                    <img
+                      src={project.coverImage}
+                      alt={project.title + " cover"}
+                    />
+                  ) : (
+                    <Gamepad2 size={38} />
+                  )}
                   <span>{project.tag || "Indie"}</span>
                 </div>
 
