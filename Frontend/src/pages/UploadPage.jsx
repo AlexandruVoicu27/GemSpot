@@ -15,6 +15,20 @@ export default function UploadPage({ onBack, profile }) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadId, setUploadId] = useState("");
   const [scanStatus, setScanStatus] = useState("");
+  const [selectedGenres, setSelectedGenres] = useState([]);
+  const genres = [
+  "Action",
+  "Adventure",
+  "Puzzle",
+  "Horror",
+  "Platformer",
+  "RPG",
+  "Strategy",
+  "Simulation",
+  "Sports",
+  "Shooter",
+  "Visual Novel",
+];
 
   useEffect(() => {
     if (!uploadId) return undefined;
@@ -69,6 +83,23 @@ export default function UploadPage({ onBack, profile }) {
       return;
     }
 
+    const toggleGenre = (genre) => {
+  setSelectedGenres((currentGenres) => {
+    const nextGenres = currentGenres.includes(genre)
+      ? currentGenres.filter((item) => item !== genre)
+      : [...currentGenres, genre];
+
+    setForm((currentForm) => ({
+      ...currentForm,
+      genre: nextGenres.join(", "),
+    }));
+
+    return nextGenres;
+  });
+
+  setError("");
+  setNotice("");
+};
     setIsUploading(true);
     try {
       const result = await uploadGame(form);
@@ -76,6 +107,7 @@ export default function UploadPage({ onBack, profile }) {
       setScanStatus(result.file.scan_status);
       setNotice(result.message);
       setForm({ title: "", description: "", genre: "", gameFile: null });
+      setSelectedGenres([]);
       event.target.reset();
     } catch (uploadError) {
       setError(uploadError.message);
@@ -94,7 +126,6 @@ export default function UploadPage({ onBack, profile }) {
         <div>
           <span className="eyebrow">Creator console</span>
           <h1>Upload a game safely.</h1>
-          <p>Your archive is quarantined first, then scanned by Cloudmersive before it can be released.</p>
         </div>
         <button className="back-button" onClick={onBack}><ArrowLeft size={17} />Back</button>
       </div>
@@ -107,7 +138,31 @@ export default function UploadPage({ onBack, profile }) {
           </div>
 
           <label>Title<input name="title" value={form.title} onChange={handleChange} required maxLength="120" /></label>
-          <label>Genre<input name="genre" value={form.genre} onChange={handleChange} maxLength="60" placeholder="Puzzle, platformer, horror..." /></label>
+          <fieldset className="genre-picker">
+            <legend>Genre</legend>
+            <div className="genre-options">
+                {genres.map((genre) => (
+                <button
+                    className={
+                    selectedGenres.includes(genre)
+                        ? "genre-option selected"
+                        : "genre-option"
+                    }
+                    type="button"
+                    onClick={() => toggleGenre(genre)}
+                    key={genre}
+                >
+                    {genre}
+                </button>
+                ))}
+            </div>
+
+            <small>
+                {selectedGenres.length > 0
+                ? selectedGenres.join(", ")
+                : "Select one or more genres."}
+            </small>
+            </fieldset>
           <label>Description<textarea name="description" value={form.description} onChange={handleChange} rows="6" minLength="10" maxLength="4000" required /></label>
           <label className="archive-picker">
             Game archive

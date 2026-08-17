@@ -2397,3 +2397,116 @@ textarea:disabled {
   color: #a89583;
   font-weight: 500;
 }
+
+/* Keeps upload form labels and controls consistent with the GemSpot theme. */
+.upload-form label {
+  display: grid;
+  gap: 8px;
+  color: #ffce70;
+  font-size: 0.82rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+/* Replaces the browser's default white upload fields. */
+.upload-form input:not([type="file"]),
+.upload-form textarea {
+  width: 100%;
+  border: 1px solid #514033;
+  outline: 0;
+  background: #17110f;
+  color: #fff7e8;
+}
+
+/* Styles single-line upload fields. */
+.upload-form input:not([type="file"]) {
+  min-height: 48px;
+  padding: 0 12px;
+}
+
+/* Styles the game description field. */
+.upload-form textarea {
+  min-height: 150px;
+  padding: 12px;
+  resize: vertical;
+}
+
+/* Adds the site's orange focus treatment. */
+.upload-form input:not([type="file"]):focus,
+.upload-form textarea:focus {
+  border-color: #ffbf38;
+  box-shadow: 0 0 0 2px rgba(255, 191, 56, 0.16);
+}
+
+/* Styles the archive picker container and native file field. */
+.archive-picker input[type="file"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #514033;
+  background: #17110f;
+  color: #fff7e8;
+}
+
+/* Styles the button inside the native file picker. */
+.archive-picker input[type="file"]::file-selector-button {
+  margin-right: 10px;
+  padding: 9px 12px;
+  border: 2px solid #100c0a;
+  background: #f2a11e;
+  color: #160f0b;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+/* Makes the upload action match the site's strong action buttons. */
+.upload-form .save-button {
+  width: 100%;
+  min-height: 52px;
+  margin-top: 8px;
+  box-shadow: 4px 4px 0 #050403;
+}
+.genre-picker {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+}
+
+.genre-picker legend {
+  color: #ffce70;
+  font-size: 0.82rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.genre-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.genre-option {
+  min-height: 40px;
+  padding: 8px 13px;
+  border: 2px solid #514033;
+  background: #211814;
+  color: #f4dfc5;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.genre-option:hover {
+  border-color: #ffbf38;
+  color: #ffce70;
+}
+
+.genre-option.selected {
+  border-color: #8adf72;
+  background: #8adf72;
+  color: #160f0b;
+  box-shadow: 3px 3px 0 #050403;
+}
+
+.genre-picker small {
+  color: #a89583;
+}

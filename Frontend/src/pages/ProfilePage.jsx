@@ -29,8 +29,9 @@ export default function ProfilePage({
         <div className="profile-copy">
           <span className="eyebrow">Creator profile</span>
           <h1>{displayName}</h1>
-          <p>Your GemSpot profile is ready. Profile details will appear here once we connect creator data.</p>
-
+         <p className="profile-bio">
+         {profile?.bio?.trim() || "No bio added yet."}
+         </p>
         </div>
 
         <div className="profile-actions">
