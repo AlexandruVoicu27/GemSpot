@@ -1612,7 +1612,8 @@ textarea:disabled {
   min-width: 0;
 }
 
-.archive-picker {
+.archive-picker,
+.cover-picker {
   display: grid;
   gap: 8px;
   padding: 14px;
@@ -1620,7 +1621,8 @@ textarea:disabled {
   background: rgba(138, 223, 114, 0.06);
 }
 
-.archive-picker input {
+.archive-picker input,
+.cover-picker input {
   padding: 10px;
   border: 1px solid #514033;
   background: #17110f;
@@ -1629,6 +1631,7 @@ textarea:disabled {
 
 
 .archive-picker small,
+.cover-picker small,
 .upload-security-card p {
   color: #a89583;
   line-height: 1.45;
@@ -1756,4 +1759,1297 @@ textarea:disabled {
   padding: 10px 12px;
   border: 1px solid #705137;
   background: rgba(10, 8, 7, 0.5);
+}
+/* Moderator review workspace */
+.moderator-review-page {
+  display: grid;
+  gap: 22px;
+  padding: 30px 0 50px;
+}
+
+.review-page-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 18px;
+  border-bottom: 2px solid #443226;
+}
+
+.review-page-heading h1 {
+  margin: 8px 0;
+  color: #fff8ea;
+  font-size: clamp(2.4rem, 5vw, 4.8rem);
+  line-height: 0.95;
+}
+
+.review-page-heading p {
+  max-width: 720px;
+  margin: 0;
+  color: #c5b19e;
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+.review-settings-panel,
+.review-queue-panel,
+.review-detail-panel {
+  border: 2px solid #443226;
+  background:
+    linear-gradient(145deg, rgba(138, 223, 114, 0.08), transparent 45%),
+    #211814;
+}
+
+.review-settings-panel {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+}
+
+.review-settings-heading,
+.review-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.review-settings-heading h2 {
+  margin: 7px 0 0;
+  color: #fff8ea;
+}
+
+.review-settings-panel p,
+.review-settings-note {
+  margin: 0;
+  color: #b9a897;
+  line-height: 1.5;
+}
+
+.review-settings-row {
+  padding: 14px;
+  border: 1px solid #514033;
+  background: #17110f;
+}
+
+.review-settings-row div {
+  display: grid;
+  gap: 5px;
+}
+
+.review-settings-row strong {
+  color: #fff8ea;
+}
+
+.review-settings-row small {
+  color: #a89583;
+}
+
+.scanner-mode {
+  padding: 8px 10px;
+  border: 1px solid;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.scanner-mode.on {
+  border-color: #4f6c3e;
+  color: #aef18e;
+}
+
+.scanner-mode.off {
+  border-color: #8a6238;
+  color: #ffce70;
+}
+
+.scanner-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 76px;
+  padding: 6px 9px;
+  border: 2px solid #100c0a;
+  color: #160f0b;
+  font-weight: 900;
+}
+
+.scanner-toggle.on {
+  background: #8adf72;
+}
+
+.scanner-toggle.off {
+  background: #f2a11e;
+}
+
+.scanner-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.scanner-toggle-knob {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #160f0b;
+  border-radius: 50%;
+  background: #fff8ea;
+}
+
+.review-settings-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: max-content;
+  padding: 9px 12px;
+  border: 1px solid #705137;
+  background: #30241d;
+  color: #f4dfc5;
+}
+
+.review-workspace {
+  display: grid;
+  grid-template-columns: minmax(270px, 0.7fr) minmax(0, 1.7fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.review-queue-panel,
+.review-detail-panel {
+  min-width: 0;
+  padding: 20px;
+}
+
+.review-panel-heading,
+.review-detail-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.review-panel-heading h2,
+.review-detail-heading h2 {
+  margin: 7px 0;
+  color: #fff8ea;
+}
+
+.review-refresh-button {
+  padding: 9px;
+  border: 1px solid #705137;
+  background: #30241d;
+  color: #f4dfc5;
+}
+
+.review-queue-item {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 13px;
+  border: 1px solid #514033;
+  background: #17110f;
+  color: #f4dfc5;
+  text-align: left;
+}
+
+.review-queue-item.selected {
+  border-color: #8adf72;
+  background: rgba(138, 223, 114, 0.12);
+}
+
+.review-queue-item strong {
+  color: #fff8ea;
+}
+
+.review-queue-item span,
+.review-queue-item small {
+  overflow: hidden;
+  color: #a89583;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-status-badge {
+  padding: 8px 10px;
+  border: 1px solid #f2a11e;
+  color: #ffce70;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.review-facts {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 22px 0;
+}
+
+.review-facts div {
+  display: grid;
+  gap: 6px;
+  padding: 13px;
+  border: 1px solid #514033;
+  background: #17110f;
+}
+
+.review-facts small {
+  color: #a89583;
+}
+
+.review-facts strong {
+  color: #fff8ea;
+}
+
+.scanner-output {
+  padding: 14px;
+  border: 1px solid #514033;
+  background: #120e0c;
+}
+
+.scanner-output pre {
+  max-height: 180px;
+  overflow: auto;
+  color: #c9eebc;
+  white-space: pre-wrap;
+}
+
+.review-manual-step {
+  display: flex;
+  gap: 12px;
+  margin: 20px 0;
+  color: #8adf72;
+}
+
+.review-manual-step strong {
+  color: #fff8ea;
+}
+
+.review-manual-step p {
+  margin: 6px 0 0;
+  color: #b9a897;
+  line-height: 1.5;
+}
+
+.download-review-button,
+.approve-review-button,
+.reject-review-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 10px 14px;
+  border: 2px solid #100c0a;
+  font-weight: 900;
+}
+
+.download-review-button,
+.approve-review-button {
+  background: #8adf72;
+  color: #160f0b;
+}
+
+.reject-review-button {
+  background: #9f4b42;
+  color: #fff8ea;
+}
+
+.review-note-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+  color: #f4dfc5;
+  font-weight: 800;
+}
+
+.review-note-field textarea {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #514033;
+  background: #17110f;
+  color: #fff8ea;
+  resize: vertical;
+}
+
+.review-decision-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.empty-review-state {
+  display: grid;
+  place-items: center;
+  min-height: 420px;
+  color: #a89583;
+  text-align: center;
+}
+
+.empty-review-state h2 {
+  margin-bottom: 0;
+  color: #fff8ea;
+}
+
+@media (max-width: 850px) {
+  .review-page-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .review-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .review-facts {
+    grid-template-columns: 1fr;
+  }
+}
+.project-status {
+  margin: 16px 0;
+  color: #a89583;
+  line-height: 1.5;
+}
+
+.project-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.project-publish-button,
+.project-delete-button,
+.admin-refresh-button,
+.admin-danger-button,
+.admin-ban-button,
+.admin-unban-button,
+.admin-tools-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 2px solid #100c0a;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.project-publish-button,
+.admin-tools-button,
+.admin-refresh-button,
+.admin-unban-button {
+  background: #8adf72;
+  color: #160f0b;
+}
+
+.project-delete-button,
+.admin-danger-button,
+.admin-ban-button {
+  background: #9f4b42;
+  color: #fff8ea;
+}
+
+.project-publish-button,
+.project-delete-button {
+  min-height: 40px;
+  padding: 9px 13px;
+}
+
+.project-publish-button:hover,
+.admin-tools-button:hover,
+.admin-refresh-button:hover,
+.admin-unban-button:hover {
+  background: #a9ef91;
+}
+
+.project-delete-button:hover,
+.admin-danger-button:hover,
+.admin-ban-button:hover {
+  background: #b85b50;
+}
+
+.project-publish-button:disabled,
+.project-delete-button:disabled,
+.admin-refresh-button:disabled,
+.admin-danger-button:disabled,
+.admin-ban-button:disabled,
+.admin-unban-button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.admin-management-page {
+  padding: 38px 0 70px;
+}
+
+.admin-management-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 26px;
+}
+
+.admin-management-heading h1 {
+  margin: 8px 0;
+  color: #fff8ea;
+}
+
+.admin-management-heading p {
+  margin: 0;
+  color: #a89583;
+}
+
+.admin-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.admin-refresh-button {
+  min-height: 42px;
+  padding: 10px 14px;
+}
+
+.admin-management-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.admin-management-card {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid #514033;
+  background: #211814;
+}
+
+.admin-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+  color: #f2a11e;
+}
+
+.admin-card-heading h2 {
+  margin: 6px 0 0;
+  color: #fff8ea;
+}
+
+.admin-list {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-list-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid #443226;
+  background: #17110f;
+}
+
+.admin-item-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: #8adf72;
+}
+
+.admin-item-copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.admin-item-copy strong {
+  overflow: hidden;
+  color: #fff8ea;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-item-copy span,
+.admin-item-copy small {
+  overflow: hidden;
+  color: #a89583;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-item-copy small {
+  color: #f2a11e;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.admin-danger-button,
+.admin-ban-button,
+.admin-unban-button {
+  min-height: 38px;
+  padding: 8px 11px;
+}
+
+.admin-status-badge {
+  padding: 6px 8px;
+  border: 1px solid #514033;
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.admin-status-badge.active {
+  border-color: #8adf72;
+  color: #8adf72;
+}
+
+.admin-status-badge.banned {
+  border-color: #df7b68;
+  color: #ff9c88;
+}
+
+.admin-current-account,
+.admin-empty-list {
+  color: #a89583;
+  font-size: 0.85rem;
+}
+
+.admin-message {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border: 1px solid #514033;
+}
+
+.admin-error {
+  color: #ff9c88;
+  border-color: #9f4b42;
+  background: rgba(159, 75, 66, 0.12);
+}
+
+.admin-notice {
+  color: #c9eebc;
+  border-color: #8adf72;
+  background: rgba(138, 223, 114, 0.1);
+}
+
+@media (max-width: 900px) {
+  .admin-management-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-management-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .admin-list-item {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .admin-list-item > button,
+  .admin-list-item > .admin-status-badge,
+  .admin-list-item > .admin-current-account {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+.auth-error {
+  white-space: pre-line;
+}
+
+.ban-reason-dialog {
+  width: min(100%, 560px);
+}
+
+.ban-reason-dialog > p {
+  color: #a89583;
+  line-height: 1.5;
+}
+
+.ban-reason-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+  color: #f4dfc5;
+  font-weight: 800;
+}
+
+.ban-reason-field textarea {
+  width: 100%;
+  min-height: 130px;
+  padding: 12px;
+  border: 1px solid #514033;
+  background: #17110f;
+  color: #fff8ea;
+  resize: vertical;
+}
+
+.ban-reason-field textarea:focus {
+  border-color: #f2a11e;
+  outline: 2px solid rgba(242, 161, 30, 0.2);
+}
+
+.ban-reason-field small {
+  color: #a89583;
+  font-weight: 500;
+}
+
+/* Keeps upload form labels and controls consistent with the GemSpot theme. */
+.upload-form label {
+  display: grid;
+  gap: 8px;
+  color: #ffce70;
+  font-size: 0.82rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+/* Replaces the browser's default white upload fields. */
+.upload-form input:not([type="file"]),
+.upload-form textarea {
+  width: 100%;
+  border: 1px solid #514033;
+  outline: 0;
+  background: #17110f;
+  color: #fff7e8;
+}
+
+/* Styles single-line upload fields. */
+.upload-form input:not([type="file"]) {
+  min-height: 48px;
+  padding: 0 12px;
+}
+
+/* Styles the game description field. */
+.upload-form textarea {
+  min-height: 150px;
+  padding: 12px;
+  resize: vertical;
+}
+
+/* Adds the site's orange focus treatment. */
+.upload-form input:not([type="file"]):focus,
+.upload-form textarea:focus {
+  border-color: #ffbf38;
+  box-shadow: 0 0 0 2px rgba(255, 191, 56, 0.16);
+}
+
+/* Styles the archive picker container and native file field. */
+.archive-picker input[type="file"],
+.cover-picker input[type="file"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #514033;
+  background: #17110f;
+  color: #fff7e8;
+}
+
+/* Styles the button inside the native file picker. */
+.archive-picker input[type="file"]::file-selector-button,
+.cover-picker input[type="file"]::file-selector-button {
+  margin-right: 10px;
+  padding: 9px 12px;
+  border: 2px solid #100c0a;
+  background: #f2a11e;
+  color: #160f0b;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+/* Makes the upload action match the site's strong action buttons. */
+.upload-form .save-button {
+  width: 100%;
+  min-height: 52px;
+  margin-top: 8px;
+  box-shadow: 4px 4px 0 #050403;
+}
+.genre-picker {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+}
+
+.genre-picker legend {
+  color: #ffce70;
+  font-size: 0.82rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.genre-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.genre-option {
+  min-height: 40px;
+  padding: 8px 13px;
+  border: 2px solid #514033;
+  background: #211814;
+  color: #f4dfc5;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.genre-option:hover {
+  border-color: #ffbf38;
+  color: #ffce70;
+}
+
+.genre-option.selected {
+  border-color: #8adf72;
+  background: #8adf72;
+  color: #160f0b;
+  box-shadow: 3px 3px 0 #050403;
+}
+
+.genre-picker small {
+  color: #a89583;
+}
+
+/* Positions database search results directly below the header search field. */
+.search-area {
+  position: relative;
+  width: min(420px, 100%);
+}
+
+.search-area .search-box {
+  width: 100%;
+}
+
+.search-results {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  display: grid;
+  width: 100%;
+  max-height: 460px;
+  overflow-y: auto;
+  border: 2px solid #443226;
+  background: #211814;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.48);
+}
+
+.search-results-section {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border-bottom: 1px solid #443226;
+}
+
+.search-results-section:last-child {
+  border-bottom: 0;
+}
+
+.search-results-label {
+  padding: 4px 6px 7px;
+  color: #ffce70;
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.search-results-status {
+  margin: 0;
+  padding: 16px;
+  color: #a89583;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #fff8ea;
+  text-align: left;
+}
+
+.search-result-item:hover {
+  border-color: #8adf72;
+  background: rgba(138, 223, 114, 0.1);
+}
+
+.search-result-item > span:last-child {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.search-result-item strong,
+.search-result-item small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-result-item small {
+  color: #a89583;
+}
+
+.search-result-icon {
+  display: grid;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid #514033;
+  color: #8adf72;
+}
+
+.search-result-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Styles profiles opened from another user's search result. */
+.public-profile-page {
+  display: grid;
+  gap: 24px;
+  padding: 30px 0 70px;
+}
+
+.public-profile-hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+  padding: clamp(22px, 4vw, 38px);
+  border: 2px solid #4e392b;
+  background:
+    linear-gradient(135deg, rgba(138, 223, 114, 0.16), transparent 38%),
+    linear-gradient(90deg, #241611 0%, #17110f 58%, #302215 100%);
+}
+
+.public-profile-avatar {
+  display: grid;
+  width: 128px;
+  height: 128px;
+  place-items: center;
+  overflow: hidden;
+  border: 3px solid #100c0a;
+  background: #8adf72;
+  color: #160f0b;
+  font-size: 2rem;
+  font-weight: 1000;
+  box-shadow: 7px 7px 0 #050403;
+}
+
+.public-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.public-profile-copy h1 {
+  margin: 10px 0 4px;
+  color: #fff8ea;
+  font-size: clamp(2.2rem, 5vw, 4.4rem);
+  line-height: 0.95;
+}
+
+.public-profile-username {
+  margin: 0;
+  color: #ffbf38;
+  font-weight: 900;
+}
+
+.public-profile-bio {
+  max-width: 680px;
+  margin: 14px 0 0;
+  color: #d4c1ae;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.public-profile-games {
+  display: grid;
+  gap: 18px;
+}
+
+.public-profile-games .section-heading {
+  margin: 0;
+}
+
+.public-games-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.public-game-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  padding: 16px;
+  border: 2px solid #443226;
+  background: #211814;
+}
+
+.public-game-card-icon {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border: 2px solid #100c0a;
+  background: #f2a11e;
+  color: #160f0b;
+}
+
+.public-game-card h3 {
+  margin: 6px 0;
+  color: #fff8ea;
+}
+
+.public-game-card p {
+  margin: 0;
+  color: #a89583;
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
+  .search-area {
+    width: 100%;
+  }
+
+  .public-profile-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .public-games-grid {
+    grid-template-columns: 1fr;
+  }
+  .thumb {
+  position: relative;
+  overflow: hidden;
+}
+
+.thumb-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.thumb > svg,
+.thumb > span {
+  position: relative;
+  z-index: 1;
+}
+
+.thumb > span {
+  margin-top: auto;
+}
+}
+
+/* Displays uploaded game covers consistently across project, profile, admin, and review cards. */
+.review-queue-item {
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+}
+
+.review-queue-item strong,
+.review-queue-item span:not(.review-queue-cover),
+.review-queue-item small {
+  grid-column: 2;
+}
+
+.review-queue-cover {
+  grid-row: 1 / span 3;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid #514033;
+  background: #30241d;
+  color: #8adf72;
+}
+
+.review-queue-cover img,
+.review-game-cover img,
+.project-card-image img,
+.public-game-card-icon img,
+.admin-item-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.review-game-cover {
+  display: grid;
+  width: 92px;
+  height: 92px;
+  margin-bottom: 14px;
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid #100c0a;
+  background: #30241d;
+  color: #8adf72;
+}
+
+.project-card-image {
+  position: relative;
+  min-height: 150px;
+  overflow: hidden;
+}
+
+.project-card-image > img {
+  position: absolute;
+  inset: 0;
+}
+
+.project-card-image > svg,
+.project-card-image > span {
+  position: relative;
+  z-index: 1;
+}
+
+.project-card-image > span {
+  display: block;
+  margin-top: auto;
+  padding: 7px 8px;
+  background: rgba(0, 0, 0, 0.76);
+  color: #fff4dc;
+  text-align: center;
+}
+
+.public-game-card-icon,
+.admin-item-icon {
+  overflow: hidden;
+}
+/* Keeps project covers compact instead of letting them fill the whole card. */
+.projects-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.project-card {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 16px;
+  padding: 14px;
+  border: 2px solid #443226;
+  background: #211814;
+}
+
+.project-card-image {
+  width: 180px;
+  height: 120px;
+  min-height: 120px;
+}
+
+.project-card-content {
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .project-card {
+    grid-template-columns: 1fr;
+  }
+
+  .project-card-image {
+    width: 100%;
+    height: 150px;
+    min-height: 150px;
+  }
+}
+.game-page {
+  display: grid;
+  gap: 22px;
+  padding: 30px 0 70px;
+}
+
+.game-page-hero {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: 26px;
+  padding: 24px;
+  border: 2px solid #4e392b;
+  background:
+    linear-gradient(135deg, rgba(138, 223, 114, 0.14), transparent 42%),
+    #211814;
+}
+
+.game-page-cover {
+  display: grid;
+  min-height: 250px;
+  place-items: center;
+  overflow: hidden;
+  border: 3px solid #100c0a;
+  background: linear-gradient(135deg, #8adf72, #42bfa0);
+  color: #123329;
+  box-shadow: 6px 6px 0 #050403;
+}
+
+.game-page-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.game-page-copy h1 {
+  margin: 8px 0 4px;
+  color: #fff8ea;
+  font-size: clamp(2.2rem, 5vw, 4.6rem);
+  line-height: 0.95;
+}
+
+.game-page-creator {
+  margin: 0;
+  color: #d4c1ae;
+  font-size: 1.1rem;
+}
+
+.game-page-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.game-page-stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #30241d;
+  color: #ffce70;
+  font-weight: 850;
+}
+
+.game-page-description {
+  max-width: 720px;
+  color: #cbb8a7;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.game-primary-action,
+.game-review-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 18px;
+  border: 2px solid #100c0a;
+  background: #ffbf38;
+  color: #160f0b;
+  box-shadow: 4px 4px 0 #050403;
+  font-weight: 900;
+}
+
+.game-review-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.2fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.game-review-form-panel,
+.game-reviews-panel {
+  padding: 20px;
+  border: 2px solid #443226;
+  background: #211814;
+}
+
+.game-review-form-panel h2,
+.game-reviews-panel h2 {
+  margin: 8px 0;
+  color: #fff8ea;
+}
+
+.game-review-form-panel p {
+  color: #b9a897;
+  line-height: 1.5;
+}
+
+.game-rating-buttons {
+  display: flex;
+  gap: 7px;
+  margin: 18px 0 12px;
+}
+
+.game-rating-buttons button {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 2px solid #49362a;
+  background: #30241d;
+  color: #6c5a48;
+}
+
+.game-rating-buttons button.selected {
+  background: #ffbf38;
+  color: #17110f;
+}
+
+.game-review-form-panel textarea {
+  min-height: 145px;
+}
+
+.game-review-submit {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.game-review-item {
+  padding: 16px 0;
+  border-top: 1px solid #3c2c22;
+}
+
+.game-review-item-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.game-review-item-heading strong {
+  color: #fff4dc;
+}
+
+.game-review-item-heading small {
+  color: #a89583;
+}
+
+.game-review-stars {
+  display: flex;
+  gap: 3px;
+  margin: 8px 0;
+  color: #ffbf38;
+}
+
+.game-review-item p {
+  margin: 0;
+  color: #cbb8a7;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 760px) {
+  .game-page-hero,
+  .game-review-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .game-page-cover {
+    min-height: 190px;
+  }
 }

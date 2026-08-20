@@ -28,12 +28,20 @@ async function requireAuth(req, res, next) {
   const { data: profile, error: profileError } = await supabaseAdmin
     .from("users")
 .select(
-  "id, username, email, display_name, bio, avatar_url, role, created_at, updated_at"
+  "id, username, email, display_name, bio, avatar_url, role, is_banned, ban_reason, created_at, updated_at"
 )    .eq("id", user.id)
     .maybeSingle();
 
   if (profileError) {
     return res.status(500).json({ error: profileError.message });
+  }
+
+  if (profile?.is_banned) {
+    return res.status(403).json({
+      code: "USER_BANNED",
+      error: "This account has been banned.",
+      reason: profile.ban_reason || "No reason was provided."
+    });
   }
 
   // Rutele protejate pot folosi apoi req.user.

@@ -1,6 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { clearAuthToken, getCurrentUser, getGames, login, signup, updateProfile } from "./api";
-import ProfilePage, { EditProfilePage, UploadPage } from "./Pages";
+import { clearAuthToken, getCurrentUser, getGames, login, searchSite, signup, updateProfile } from "./api";
+import ProfilePage from "./pages/ProfilePage";
+import EditProfilePage from "./pages/EditProfilePage";
+import UploadPage from "./pages/UploadPage";
+import ModeratorReviewPage from "./pages/ModeratorReviewPage";
+import ProjectsPage from "./pages/ProjectsPage";
+import AdminManagementPage from "./pages/AdminManagementPage";
+import GamePage from "./pages/GamePage";
+import PublicProfilePage from "./pages/PublicProfilePage";
 import {
   ArrowLeft,
   Bell,
@@ -46,6 +53,9 @@ function App() {
 
 // Textul scris de user in bara de search.
   const [query, setQuery] = useState('');
+  const [searchResults, setSearchResults] = useState({ games: [], creators: [] });
+  const [isSearching, setIsSearching] = useState(false);
+  const [publicProfileUsername, setPublicProfileUsername] = useState("");
 
 // Ratingul selectat in zona de Quick Review.
   const [rating, setRating] = useState(4);
@@ -88,6 +98,8 @@ function App() {
 
   // Pagina curenta din aplicatie. Pentru inceput avem "home" si "profile".
   const [page, setPage] = useState("home");
+  const [gameSlug, setGameSlug] = useState("");
+  const [focusGameReviews, setFocusGameReviews] = useState(false);
 
   const showHomePage = () => {
   setPage("home");
@@ -128,6 +140,13 @@ const isAuthenticated = Boolean(user);
   const isProfilePage = page === "profile" && isAuthenticated;
   const isEditProfilePage = page === "edit-profile" && isAuthenticated;
   const isUploadPage = page === "upload" && isAuthenticated;
+  const isProjectsPage = page === "projects" && isAuthenticated;
+  const isAdminPage = page === "admin" && isAuthenticated && profile?.role === "ADMIN";
+  const isPublicProfilePage =
+    page === "public-profile" && Boolean(publicProfileUsername);
+  const canModerate = ["ADMIN", "MODERATOR"].includes(profile?.role);
+  const isReviewPage = page === "moderation" && isAuthenticated && canModerate;
+  const isGamePage = page === "game" && Boolean(gameSlug);
 
 
   const visibleGames = useMemo(() => {
@@ -153,6 +172,30 @@ const isAuthenticated = Boolean(user);
     return false;
   };
 
+  // Opens a public creator profile from a search result.
+  const handleOpenPublicProfile = (username) => {
+    setPublicProfileUsername(username);
+    setSearchResults({ games: [], creators: [] });
+    setQuery("");
+    setPage("public-profile");
+    setAuthPage(null);
+    setGateNotice("");
+  };
+
+  // Closes the search result panel without changing the current page.
+  const closeSearchResults = () => {
+    setSearchResults({ games: [], creators: [] });
+  };
+
+  // Opens a public game page, optionally focused on its reviews.
+  const handleOpenGame = (slug, focusReviews = false) => {
+    setGameSlug(slug);
+    setFocusGameReviews(focusReviews);
+    setPage("game");
+    setAuthPage(null);
+    setGateNotice("");
+    closeSearchResults();
+  };
   const handleStartUpload = () => {
     if (!isAuthenticated) {
       setGateNotice("Uploading a project needs a GemSpot account first.");
@@ -164,7 +207,37 @@ const isAuthenticated = Boolean(user);
     setAuthPage(null);
   };
 
+  // Opens the projects page for the current profile.
+  const handleStartProjects = () => {
+    setPage("projects");
+    setAuthPage(null);
+    setGateNotice("");
+  };
 
+  // Opens the moderator review page for authorized users.
+  const handleStartModeration = () => {
+    if (!isAuthenticated || !canModerate) {
+      setGateNotice("Only admins and moderators can review uploads.");
+      return;
+    }
+
+    setPage("moderation");
+    setAuthPage(null);
+    setGateNotice("");
+  };
+
+
+  // Opens the administrator management page for admins.
+  const handleStartAdmin = () => {
+    if (!isAuthenticated || profile?.role !== "ADMIN") {
+      setGateNotice("Only admins can manage users and games.");
+      return;
+    }
+
+    setPage("admin");
+    setAuthPage(null);
+    setGateNotice("");
+  };
   const handleAuthSubmit = async (event) => {
     event.preventDefault();
     setAuthError("");
@@ -194,7 +267,14 @@ const isAuthenticated = Boolean(user);
       setAuthPassword("");
       setAuthPasswordConfirm("");
     } catch (error) {
-      setAuthError(error.message);
+      if (error.code === "USER_BANNED") {
+        setAuthError(
+          "Your account has been banned. Reason: " +
+            (error.reason || "No reason was provided.")
+        );
+      } else {
+        setAuthError(error.message);
+      }
     } finally {
       setIsAuthLoading(false);
     }
@@ -250,6 +330,45 @@ const isAuthenticated = Boolean(user);
   return data.profile;
 };
 
+  // Searches the database after the user pauses while typing.
+  useEffect(() => {
+    const searchTerm = query.trim();
+
+    if (searchTerm.length < 2) {
+      setSearchResults({ games: [], creators: [] });
+      setIsSearching(false);
+      return undefined;
+    }
+
+    let active = true;
+    const timeout = window.setTimeout(async () => {
+      setIsSearching(true);
+
+      try {
+        const result = await searchSite(searchTerm);
+
+        if (active) {
+          setSearchResults({
+            games: Array.isArray(result.games) ? result.games : [],
+            creators: Array.isArray(result.creators) ? result.creators : [],
+          });
+        }
+      } catch {
+        if (active) {
+          setSearchResults({ games: [], creators: [] });
+        }
+      } finally {
+        if (active) {
+          setIsSearching(false);
+        }
+      }
+    }, 300);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
+  }, [query]);
   useEffect(() => {
     getGames()
       .then((data) => {
@@ -265,9 +384,18 @@ const isAuthenticated = Boolean(user);
       .then((data) => {
         if (data.user) setSession({ user: data.user, profile: data.user.profile });
       })
-      .catch(() => {
+      .catch((error) => {
         clearAuthToken();
         setSession(null);
+
+        if (error.code === "USER_BANNED") {
+          setAuthMode("login");
+          setAuthPage("login");
+          setAuthError(
+            "Your account has been banned. Reason: " +
+              (error.reason || "No reason was provided.")
+          );
+        }
       });
   }, []);
 
@@ -286,14 +414,91 @@ return (
           </a>
 
           <div className="header-actions">
-            <label className="search-box">
-              <Search size={18} />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search games, creators, tags"
-              />
-            </label>
+            <div className="search-area">
+              <label className="search-box">
+                <Search size={18} />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search games, creators, tags"
+                  aria-label="Search games, creators, and tags"
+                />
+              </label>
+
+              {query.trim().length >= 2 && (
+                <div className="search-results" role="listbox">
+                  {isSearching && (
+                    <p className="search-results-status">Searching...</p>
+                  )}
+
+                  {!isSearching &&
+                    searchResults.creators.length === 0 &&
+                    searchResults.games.length === 0 && (
+                      <p className="search-results-status">
+                        No matching games or creators.
+                      </p>
+                    )}
+
+                  {!isSearching && searchResults.creators.length > 0 && (
+                    <div className="search-results-section">
+                      <span className="search-results-label">Creators</span>
+                      {searchResults.creators.map((creator) => (
+                        <button
+                          className="search-result-item"
+                          type="button"
+                          onClick={() =>
+                            handleOpenPublicProfile(creator.username)
+                          }
+                          key={creator.id}
+                        >
+                          <span className="search-result-icon">
+                            {creator.avatar_url ? (
+                              <img src={creator.avatar_url} alt="" />
+                            ) : (
+                              <UserPlus size={16} />
+                            )}
+                          </span>
+                          <span>
+                            <strong>
+                              {creator.display_name || creator.username}
+                            </strong>
+                            <small>@{creator.username}</small>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {!isSearching && searchResults.games.length > 0 && (
+                    <div className="search-results-section">
+                      <span className="search-results-label">Games</span>
+                      {searchResults.games.map((game) => (
+                        <button
+                          className="search-result-item"
+                          type="button"
+                          onClick={() => handleOpenGame(game.slug)}
+                          key={game.id}
+                        >
+                          <span className="search-result-icon">
+                            {game.coverImage ? (
+                              <img src={game.coverImage} alt="" />
+                            ) : (
+                              <Gamepad2 size={16} />
+                            )}
+                          </span>
+                          <span>
+                            <strong>{game.title}</strong>
+                            <small>
+                              {game.genre} · by {game.creator?.username}
+                            </small>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
             <button className="icon-button" aria-label="Notifications">
               <Bell size={19} />
             </button>
@@ -362,6 +567,35 @@ return (
             </button>
           </div>
         </section>
+      ) : isGamePage ? (
+        <GamePage
+          slug={gameSlug}
+          focusReviews={focusGameReviews}
+          isAuthenticated={isAuthenticated}
+          onRequireAuth={requireAccount}
+          onBack={showHomePage}
+        />
+      ) : isPublicProfilePage ? (
+        <PublicProfilePage
+          username={publicProfileUsername}
+          onBack={() => setPage("home")}
+        />
+      ) : isAdminPage ? (
+        <AdminManagementPage
+          onBack={() => setPage("profile")}
+          currentUserId={user?.id}
+        />
+      ) : isProjectsPage ? (
+        <ProjectsPage
+          profile={profile}
+          accountLabel={accountLabel}
+          onBack={() => setPage("profile")}
+        />
+      ) : isReviewPage ? (
+        <ModeratorReviewPage
+          onBack={() => setPage("profile")}
+          profile={profile}
+        />
       ) : isEditProfilePage ? (
         <EditProfilePage
           accountLabel={accountLabel}
@@ -380,6 +614,9 @@ return (
           requireAccount={requireAccount}
           onEdit={() => setPage("edit-profile")}
           onUpload={handleStartUpload}
+          onReview={handleStartModeration}
+          onAdmin={handleStartAdmin}
+          onProjects={handleStartProjects}
         />
       ) : (
         <>
@@ -463,10 +700,19 @@ return (
             {!isLoadingGames && !gamesError && visibleGames.length === 0 && <p className="empty-state">No games match this filter yet.</p>}
             {visibleGames.map((game) => (
               <article className={`game-card ${game.palette}`} key={game.title}>
-                <div className="thumb">
+              <div className="thumb">
+                {game.coverImage ? (
+                  <img
+                    className="thumb-image"
+                    src={game.coverImage}
+                    alt={game.title + " cover"}
+                  />
+                ) : (
                   <Gamepad2 size={34} />
-                  <span>{game.tag}</span>
-                </div>
+                )}
+
+                <span>{game.tag}</span>
+              </div>
                 <div className="game-info">
                   <div>
                     <h3>{game.title}</h3>
@@ -491,19 +737,23 @@ return (
                     </span>
                   </div>
                   <div className="game-actions">
-                    <button onClick={() => requireAccount('Taking this game')}>
-                      {isAuthenticated ? (
-                        game.mode === 'Download' ? <Download size={16} /> : <Play size={16} />
-                      ) : (
-                        <LockKeyhole size={16} />
-                      )}
-                      Get & review
-                    </button>
-                    <button className="quiet-action">
-                      <MessageSquare size={16} />
-                      Read reviews
-                    </button>
-                  </div>
+                  <button onClick={() => handleOpenGame(game.slug)}>
+                    {game.mode === "Download" ? (
+                      <Download size={16} />
+                    ) : (
+                      <Play size={16} />
+                    )}
+                    Get & review
+                  </button>
+
+                  <button
+                    className="quiet-action"
+                    onClick={() => handleOpenGame(game.slug, true)}
+                  >
+                    <MessageSquare size={16} />
+                    Read reviews
+                  </button>
+                </div>
                 </div>
               </article>
             ))}

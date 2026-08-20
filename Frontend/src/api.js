@@ -37,6 +37,7 @@ async function apiFetch(path, options = {}) {
   if (!response.ok) {
     const error = new Error(data?.error || "API request failed");
     error.code = data?.code;
+    error.reason = data?.reason;
     throw error;
   }
 
@@ -85,6 +86,61 @@ export async function getGames() {
   return apiFetch("/games");
 }
 
+// Loads all projects owned by the authenticated creator.
+// Searches published games and public creator profiles.
+export async function searchSite(query) {
+  return apiFetch("/search?q=" + encodeURIComponent(query));
+}
+
+// Loads one public creator profile and their published games.
+export async function getPublicProfile(username) {
+  return apiFetch("/users/" + encodeURIComponent(username));
+}
+export async function getMyProjects() {
+  return apiFetch("/games/mine");
+}
+
+// Publishes a creator-owned game after its build was approved.
+export async function publishGame(gameId) {
+  return apiFetch(`/games/${gameId}/publish`, {
+    method: "POST",
+  });
+}
+
+// Archives a creator-owned or administrator-selected game.
+export async function deleteGame(gameId) {
+  return apiFetch(`/games/${gameId}`, {
+    method: "DELETE",
+  });
+}
+
+// Loads games visible to administrator accounts.
+export async function getAdminGames() {
+  return apiFetch("/admin/games");
+}
+
+// Loads users visible to administrator accounts.
+export async function getAdminUsers() {
+  return apiFetch("/admin/users");
+}
+
+// Bans one user through the administrator endpoint.
+export async function banUser(userId, reason) {
+  return apiFetch(`/admin/users/${userId}/ban`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ reason }),
+  });
+}
+
+// Removes one user's ban through the administrator endpoint.
+export async function unbanUser(userId) {
+  return apiFetch(`/admin/users/${userId}/unban`, {
+    method: "POST",
+  });
+}
 export async function updateProfile(profileData) {
   return apiFetch("/auth/profile", {
     method: "PATCH",
@@ -96,13 +152,16 @@ export async function updateProfile(profileData) {
 }
 
 
-export async function uploadGame({ title, description, genre, gameFile }) {
+export async function uploadGame({ title, description, genre, gameFile,coverImage }) {
   const formData = new FormData();
   formData.append("title", title);
   formData.append("description", description);
   if (genre) formData.append("genre", genre);
   formData.append("gameFile", gameFile);
-
+  
+  if (coverImage) {
+    formData.append("coverImage", coverImage);
+  }
   return apiFetch("/uploads/games", {
     method: "POST",
     body: formData,
@@ -161,4 +220,28 @@ export async function downloadManualReviewFile(fileId, filename = "game-upload")
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+export async function getGame(slug) {
+  return apiFetch(`/games/${encodeURIComponent(slug)}`);
+}
+
+export async function claimGame(slug) {
+  return apiFetch(`/games/${encodeURIComponent(slug)}/claim`, {
+    method: "POST",
+  });
+}
+
+export async function saveGameReview(slug, rating, body) {
+  return apiFetch(`/games/${encodeURIComponent(slug)}/reviews`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ rating, body }),
+  });
+}
+
+export function getGameFileUrl(fileId) {
+  return `${API_URL}/uploads/files/${encodeURIComponent(fileId)}`;
 }
