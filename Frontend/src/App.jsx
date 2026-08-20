@@ -6,6 +6,7 @@ import UploadPage from "./pages/UploadPage";
 import ModeratorReviewPage from "./pages/ModeratorReviewPage";
 import ProjectsPage from "./pages/ProjectsPage";
 import AdminManagementPage from "./pages/AdminManagementPage";
+import GamePage from "./pages/GamePage";
 import PublicProfilePage from "./pages/PublicProfilePage";
 import {
   ArrowLeft,
@@ -97,6 +98,8 @@ function App() {
 
   // Pagina curenta din aplicatie. Pentru inceput avem "home" si "profile".
   const [page, setPage] = useState("home");
+  const [gameSlug, setGameSlug] = useState("");
+  const [focusGameReviews, setFocusGameReviews] = useState(false);
 
   const showHomePage = () => {
   setPage("home");
@@ -143,6 +146,7 @@ const isAuthenticated = Boolean(user);
     page === "public-profile" && Boolean(publicProfileUsername);
   const canModerate = ["ADMIN", "MODERATOR"].includes(profile?.role);
   const isReviewPage = page === "moderation" && isAuthenticated && canModerate;
+  const isGamePage = page === "game" && Boolean(gameSlug);
 
 
   const visibleGames = useMemo(() => {
@@ -181,6 +185,16 @@ const isAuthenticated = Boolean(user);
   // Closes the search result panel without changing the current page.
   const closeSearchResults = () => {
     setSearchResults({ games: [], creators: [] });
+  };
+
+  // Opens a public game page, optionally focused on its reviews.
+  const handleOpenGame = (slug, focusReviews = false) => {
+    setGameSlug(slug);
+    setFocusGameReviews(focusReviews);
+    setPage("game");
+    setAuthPage(null);
+    setGateNotice("");
+    closeSearchResults();
   };
   const handleStartUpload = () => {
     if (!isAuthenticated) {
@@ -462,11 +476,7 @@ return (
                         <button
                           className="search-result-item"
                           type="button"
-                          onClick={() => {
-                            setQuery(game.title);
-                            closeSearchResults();
-                            setPage("home");
-                          }}
+                          onClick={() => handleOpenGame(game.slug)}
                           key={game.id}
                         >
                           <span className="search-result-icon">
@@ -557,6 +567,14 @@ return (
             </button>
           </div>
         </section>
+      ) : isGamePage ? (
+        <GamePage
+          slug={gameSlug}
+          focusReviews={focusGameReviews}
+          isAuthenticated={isAuthenticated}
+          onRequireAuth={requireAccount}
+          onBack={showHomePage}
+        />
       ) : isPublicProfilePage ? (
         <PublicProfilePage
           username={publicProfileUsername}
@@ -719,19 +737,23 @@ return (
                     </span>
                   </div>
                   <div className="game-actions">
-                    <button onClick={() => requireAccount('Taking this game')}>
-                      {isAuthenticated ? (
-                        game.mode === 'Download' ? <Download size={16} /> : <Play size={16} />
-                      ) : (
-                        <LockKeyhole size={16} />
-                      )}
-                      Get & review
-                    </button>
-                    <button className="quiet-action">
-                      <MessageSquare size={16} />
-                      Read reviews
-                    </button>
-                  </div>
+                  <button onClick={() => handleOpenGame(game.slug)}>
+                    {game.mode === "Download" ? (
+                      <Download size={16} />
+                    ) : (
+                      <Play size={16} />
+                    )}
+                    Get & review
+                  </button>
+
+                  <button
+                    className="quiet-action"
+                    onClick={() => handleOpenGame(game.slug, true)}
+                  >
+                    <MessageSquare size={16} />
+                    Read reviews
+                  </button>
+                </div>
                 </div>
               </article>
             ))}

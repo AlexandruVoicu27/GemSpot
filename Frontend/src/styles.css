@@ -2833,3 +2833,223 @@ textarea:disabled {
 .admin-item-icon {
   overflow: hidden;
 }
+/* Keeps project covers compact instead of letting them fill the whole card. */
+.projects-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.project-card {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 16px;
+  padding: 14px;
+  border: 2px solid #443226;
+  background: #211814;
+}
+
+.project-card-image {
+  width: 180px;
+  height: 120px;
+  min-height: 120px;
+}
+
+.project-card-content {
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .project-card {
+    grid-template-columns: 1fr;
+  }
+
+  .project-card-image {
+    width: 100%;
+    height: 150px;
+    min-height: 150px;
+  }
+}
+.game-page {
+  display: grid;
+  gap: 22px;
+  padding: 30px 0 70px;
+}
+
+.game-page-hero {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: 26px;
+  padding: 24px;
+  border: 2px solid #4e392b;
+  background:
+    linear-gradient(135deg, rgba(138, 223, 114, 0.14), transparent 42%),
+    #211814;
+}
+
+.game-page-cover {
+  display: grid;
+  min-height: 250px;
+  place-items: center;
+  overflow: hidden;
+  border: 3px solid #100c0a;
+  background: linear-gradient(135deg, #8adf72, #42bfa0);
+  color: #123329;
+  box-shadow: 6px 6px 0 #050403;
+}
+
+.game-page-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.game-page-copy h1 {
+  margin: 8px 0 4px;
+  color: #fff8ea;
+  font-size: clamp(2.2rem, 5vw, 4.6rem);
+  line-height: 0.95;
+}
+
+.game-page-creator {
+  margin: 0;
+  color: #d4c1ae;
+  font-size: 1.1rem;
+}
+
+.game-page-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.game-page-stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #30241d;
+  color: #ffce70;
+  font-weight: 850;
+}
+
+.game-page-description {
+  max-width: 720px;
+  color: #cbb8a7;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.game-primary-action,
+.game-review-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 18px;
+  border: 2px solid #100c0a;
+  background: #ffbf38;
+  color: #160f0b;
+  box-shadow: 4px 4px 0 #050403;
+  font-weight: 900;
+}
+
+.game-review-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.2fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.game-review-form-panel,
+.game-reviews-panel {
+  padding: 20px;
+  border: 2px solid #443226;
+  background: #211814;
+}
+
+.game-review-form-panel h2,
+.game-reviews-panel h2 {
+  margin: 8px 0;
+  color: #fff8ea;
+}
+
+.game-review-form-panel p {
+  color: #b9a897;
+  line-height: 1.5;
+}
+
+.game-rating-buttons {
+  display: flex;
+  gap: 7px;
+  margin: 18px 0 12px;
+}
+
+.game-rating-buttons button {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 2px solid #49362a;
+  background: #30241d;
+  color: #6c5a48;
+}
+
+.game-rating-buttons button.selected {
+  background: #ffbf38;
+  color: #17110f;
+}
+
+.game-review-form-panel textarea {
+  min-height: 145px;
+}
+
+.game-review-submit {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.game-review-item {
+  padding: 16px 0;
+  border-top: 1px solid #3c2c22;
+}
+
+.game-review-item-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.game-review-item-heading strong {
+  color: #fff4dc;
+}
+
+.game-review-item-heading small {
+  color: #a89583;
+}
+
+.game-review-stars {
+  display: flex;
+  gap: 3px;
+  margin: 8px 0;
+  color: #ffbf38;
+}
+
+.game-review-item p {
+  margin: 0;
+  color: #cbb8a7;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 760px) {
+  .game-page-hero,
+  .game-review-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .game-page-cover {
+    min-height: 190px;
+  }
+}

@@ -13,8 +13,8 @@ function getCreatorName(creator) {
 }
 
 function getGameMode(files = []) {
-  const hasBrowserBuild = files.some((file) => file.kind === "GAME_BUILD");
-  return hasBrowserBuild ? "Browser Play" : "Download";
+  const hasDownloadableBuild = files.some((file) => file.kind === "GAME_BUILD");
+  return hasDownloadableBuild ? "Download" : "Unavailable";
 }
 
 function getAverageRating(reviews = []) {
@@ -251,9 +251,9 @@ router.get("/:slug", async (req, res) => {
         created_at,
         updated_at,
         cover_image_url,
-        creator:users(id, username),
+        creator:users(id, username, display_name),
         files:game_files(id, kind, file_name, url, size_bytes, created_at),
-        reviews(id, rating, body, created_at, user:users(username))
+        reviews(id, rating, body, created_at, updated_at, user:users(username, display_name))
       `
     );
 
@@ -303,5 +303,179 @@ router.get("/:slug/reviews", async (req, res) => {
 
   res.json(data);
 });
+function serializeReview(review) {
+  const user = Array.isArray(review.user) ? review.user[0] : review.user;
 
+  return {
+    id: review.id,
+    rating: review.rating,
+    body: review.body,
+    created_at: review.created_at,
+    updated_at: review.updated_at,
+    user: {
+      username: user?.username || "Anonymous",
+      display_name: user?.display_name || null,
+    },
+  };
+}
+
+async function getPublishedGame(slug) {
+  return supabaseAdmin
+    .from("games")
+    .select("id, slug, title, creator_id, status")
+    .eq("slug", slug)
+    .eq("status", "PUBLISHED")
+    .maybeSingle();
+}
+
+// Records that the authenticated user got/played the game.
+router.post("/:slug/claim", requireAuth, async (req, res) => {
+  if (!requireSupabaseConfig(res)) return;
+
+  const gameResult = await getPublishedGame(req.params.slug);
+
+  if (gameResult.error) {
+    return res.status(500).json({ error: gameResult.error.message });
+  }
+
+  if (!gameResult.data) {
+    return res.status(404).json({ error: "Game not found." });
+  }
+
+  const claimResult = await supabaseAdmin
+    .from("game_claims")
+    .upsert(
+      {
+        user_id: req.user.id,
+        game_id: gameResult.data.id,
+      },
+      {
+        onConflict: "user_id,game_id",
+      }
+    )
+    .select("id, user_id, game_id, status, created_at, reviewed_at")
+    .single();
+
+  if (claimResult.error) {
+    return res.status(500).json({ error: claimResult.error.message });
+  }
+
+  res.json({
+    message: "Game claimed successfully.",
+    claim: claimResult.data,
+  });
+});
+
+// Creates or updates one review for a game.
+router.post("/:slug/reviews", requireAuth, async (req, res) => {
+  if (!requireSupabaseConfig(res)) return;
+
+  const rating = Number(req.body?.rating);
+  const body = String(req.body?.body || "").trim().slice(0, 4000);
+
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    return res.status(400).json({
+      error: "Rating must be a whole number from 1 to 5.",
+    });
+  }
+
+  if (body.length < 10) {
+    return res.status(400).json({
+      error: "Review must be at least 10 characters.",
+    });
+  }
+
+  const gameResult = await getPublishedGame(req.params.slug);
+
+  if (gameResult.error) {
+    return res.status(500).json({ error: gameResult.error.message });
+  }
+
+  if (!gameResult.data) {
+    return res.status(404).json({ error: "Game not found." });
+  }
+
+  if (gameResult.data.creator_id === req.user.id) {
+    return res.status(403).json({
+      error: "You cannot review your own game.",
+    });
+  }
+
+  const claimResult = await supabaseAdmin
+    .from("game_claims")
+    .select("id")
+    .eq("user_id", req.user.id)
+    .eq("game_id", gameResult.data.id)
+    .maybeSingle();
+
+  if (claimResult.error) {
+    return res.status(500).json({ error: claimResult.error.message });
+  }
+
+  if (!claimResult.data) {
+    return res.status(409).json({
+      error: "Get the game before submitting a review.",
+      code: "GAME_NOT_CLAIMED",
+    });
+  }
+
+  const existingReview = await supabaseAdmin
+    .from("reviews")
+    .select("id")
+    .eq("user_id", req.user.id)
+    .eq("game_id", gameResult.data.id)
+    .maybeSingle();
+
+  if (existingReview.error) {
+    return res.status(500).json({ error: existingReview.error.message });
+  }
+
+  let reviewResult;
+
+  if (existingReview.data) {
+    reviewResult = await supabaseAdmin
+      .from("reviews")
+      .update({
+        rating,
+        body,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", existingReview.data.id)
+      .select(
+        "id, rating, body, created_at, updated_at, user:users(username, display_name)"
+      )
+      .single();
+  } else {
+    reviewResult = await supabaseAdmin
+      .from("reviews")
+      .insert({
+        user_id: req.user.id,
+        game_id: gameResult.data.id,
+        claim_id: claimResult.data.id,
+        rating,
+        body,
+      })
+      .select(
+        "id, rating, body, created_at, updated_at, user:users(username, display_name)"
+      )
+      .single();
+  }
+
+  if (reviewResult.error) {
+    return res.status(500).json({ error: reviewResult.error.message });
+  }
+
+  await supabaseAdmin
+    .from("game_claims")
+    .update({
+      status: "REVIEWED",
+      reviewed_at: new Date().toISOString(),
+    })
+    .eq("id", claimResult.data.id);
+
+  res.json({
+    message: existingReview.data ? "Review updated." : "Review submitted.",
+    review: serializeReview(reviewResult.data),
+  });
+});
 module.exports = router;

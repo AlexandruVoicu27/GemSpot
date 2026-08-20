@@ -221,3 +221,27 @@ export async function downloadManualReviewFile(fileId, filename = "game-upload")
   link.remove();
   URL.revokeObjectURL(url);
 }
+
+export async function getGame(slug) {
+  return apiFetch(`/games/${encodeURIComponent(slug)}`);
+}
+
+export async function claimGame(slug) {
+  return apiFetch(`/games/${encodeURIComponent(slug)}/claim`, {
+    method: "POST",
+  });
+}
+
+export async function saveGameReview(slug, rating, body) {
+  return apiFetch(`/games/${encodeURIComponent(slug)}/reviews`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ rating, body }),
+  });
+}
+
+export function getGameFileUrl(fileId) {
+  return `${API_URL}/uploads/files/${encodeURIComponent(fileId)}`;
+}
