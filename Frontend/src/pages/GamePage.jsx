@@ -4,6 +4,7 @@ import {
   Download,
   Gamepad2,
   MessageSquare,
+  Play,
   Star,
 } from "lucide-react";
 import {
@@ -13,8 +14,12 @@ import {
   saveGameReview,
 } from "../api";
 
-function getRelation(value) {
-  return Array.isArray(value) ? value[0] : value;
+function displayReviewUser(review) {
+  return (
+    review.user?.display_name ||
+    review.user?.username ||
+    "Anonymous"
+  );
 }
 
 function formatDate(value) {
@@ -52,7 +57,9 @@ export default function GamePage({
 
     getGame(slug)
       .then((result) => {
-        if (active) setGame(result);
+        if (!active) return;
+
+        setGame(result);
       })
       .catch((loadError) => {
         if (active) {
@@ -60,7 +67,9 @@ export default function GamePage({
         }
       })
       .finally(() => {
-        if (active) setIsLoading(false);
+        if (active) {
+          setIsLoading(false);
+        }
       });
 
     return () => {
@@ -79,10 +88,11 @@ export default function GamePage({
     }
   }, [isLoading, focusReviews]);
 
-  const creator = getRelation(game?.creator);
-  const files = Array.isArray(game?.files) ? game.files : [];
+  const buildFile = game?.files?.find(
+    (file) => file.kind === "GAME_BUILD"
+  );
+
   const reviews = Array.isArray(game?.reviews) ? game.reviews : [];
-  const gameFile = files.find((file) => file.kind === "GAME_BUILD");
 
   const averageRating = reviews.length
     ? (
@@ -97,8 +107,8 @@ export default function GamePage({
       return;
     }
 
-    if (!gameFile) {
-      setError("This game does not have an available download.");
+    if (!buildFile) {
+      setError("This game does not have an available build yet.");
       return;
     }
 
@@ -107,7 +117,7 @@ export default function GamePage({
     setNotice("");
 
     const gameWindow = window.open(
-      getGameFileUrl(gameFile.id),
+      getGameFileUrl(buildFile.id),
       "_blank",
       "noopener,noreferrer"
     );
@@ -116,7 +126,7 @@ export default function GamePage({
       await claimGame(game.slug);
       setHasClaimed(true);
       setNotice(
-        "The download opened in a new tab. Return here after playing to leave a review."
+        "The game opened in a new tab. Come back here to leave your review."
       );
 
       if (!gameWindow) {
@@ -139,7 +149,7 @@ export default function GamePage({
     }
 
     if (!hasClaimed) {
-      setError("Get the game first before submitting a review.");
+      setError("Use “Get game & review” first.");
       return;
     }
 
@@ -159,7 +169,9 @@ export default function GamePage({
 
     try {
       await saveGameReview(game.slug, rating, reviewBody.trim());
-      setGame(await getGame(game.slug));
+
+      const refreshedGame = await getGame(game.slug);
+      setGame(refreshedGame);
       setNotice("Your review was saved.");
     } catch (submitError) {
       setError(submitError.message || "Could not save your review.");
@@ -175,9 +187,13 @@ export default function GamePage({
         Back to games
       </button>
 
-      {isLoading && <p className="empty-state">Loading game...</p>}
+      {isLoading && (
+        <p className="empty-state">Loading game...</p>
+      )}
 
-      {error && <p className="empty-state error-state">{error}</p>}
+      {error && (
+        <p className="empty-state error-state">{error}</p>
+      )}
 
       {!isLoading && !error && game && (
         <>
@@ -191,10 +207,14 @@ export default function GamePage({
             </div>
 
             <div className="game-page-copy">
-              <span className="eyebrow">{game.genre || "Indie game"}</span>
+              <span className="eyebrow">
+                {game.genre || "Indie game"}
+              </span>
+
               <h1>{game.title}</h1>
+
               <p className="game-page-creator">
-                by {creator?.username || "Unknown creator"}
+                by {game.creator?.username || "Unknown creator"}
               </p>
 
               <div className="game-page-stats">
@@ -207,8 +227,8 @@ export default function GamePage({
                   {reviews.length} reviews
                 </span>
                 <span>
-                  <Download size={16} />
-                  {gameFile ? "Download" : "Unavailable"}
+                  {buildFile ? <Download size={16} /> : <Play size={16} />}
+                  {buildFile ? "Get build" : "Unavailable"}
                 </span>
               </div>
 
@@ -222,8 +242,8 @@ export default function GamePage({
                 onClick={handleGetGame}
                 disabled={isGetting}
               >
-                <Download size={18} />
-                {isGetting ? "Opening..." : "Download & review"}
+                {buildFile ? <Download size={18} /> : <Play size={18} />}
+                {isGetting ? "Opening..." : "Get game & review"}
               </button>
 
               {notice && <p className="edit-notice">{notice}</p>}
@@ -235,8 +255,8 @@ export default function GamePage({
               <span className="eyebrow">Leave feedback</span>
               <h2>How was the game?</h2>
               <p>
-                Download the game first, then tell the creator what worked and
-                what could improve.
+                Get the game first, then tell the creator what worked and what
+                could improve.
               </p>
 
               <form onSubmit={handleSubmitReview}>
@@ -245,7 +265,7 @@ export default function GamePage({
                     <button
                       key={value}
                       type="button"
-                      aria-label={"Rate " + value + " out of 5"}
+                      aria-label={`Rate ${value} out of 5`}
                       className={value <= rating ? "selected" : ""}
                       onClick={() => {
                         if (!isAuthenticated) {
@@ -283,7 +303,10 @@ export default function GamePage({
               </form>
             </section>
 
-            <section className="game-reviews-panel" ref={reviewsRef}>
+            <section
+              className="game-reviews-panel"
+              ref={reviewsRef}
+            >
               <div className="section-heading">
                 <div>
                   <span className="eyebrow">Community feedback</span>
@@ -298,34 +321,26 @@ export default function GamePage({
                 </p>
               )}
 
-              {reviews.map((review) => {
-                const reviewer = getRelation(review.user);
+              {reviews.map((review) => (
+                <article className="game-review-item" key={review.id}>
+                  <div className="game-review-item-heading">
+                    <strong>{displayReviewUser(review)}</strong>
+                    <small>{formatDate(review.created_at)}</small>
+                  </div>
 
-                return (
-                  <article className="game-review-item" key={review.id}>
-                    <div className="game-review-item-heading">
-                      <strong>
-                        {reviewer?.display_name ||
-                          reviewer?.username ||
-                          "Anonymous"}
-                      </strong>
-                      <small>{formatDate(review.created_at)}</small>
-                    </div>
+                  <div className="game-review-stars">
+                    {[1, 2, 3, 4, 5].map((value) => (
+                      <Star
+                        key={value}
+                        size={15}
+                        fill={value <= review.rating ? "currentColor" : "none"}
+                      />
+                    ))}
+                  </div>
 
-                    <div className="game-review-stars">
-                      {[1, 2, 3, 4, 5].map((value) => (
-                        <Star
-                          key={value}
-                          size={15}
-                          fill={value <= review.rating ? "currentColor" : "none"}
-                        />
-                      ))}
-                    </div>
-
-                    <p>{review.body}</p>
-                  </article>
-                );
-              })}
+                  <p>{review.body}</p>
+                </article>
+              ))}
             </section>
           </section>
         </>
