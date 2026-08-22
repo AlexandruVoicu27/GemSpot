@@ -1,13 +1,41 @@
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
+  CheckCircle2,
   Download,
   Gamepad2,
+  MessageSquare,
   Play,
   Star,
   Trash2,
 } from "lucide-react";
 import { deleteGame, getMyProjects, publishGame } from "../api";
+
+// Renders an uploaded cover and falls back cleanly when its URL is missing
+// or the remote image can no longer be loaded.
+function ProjectCover({ project }) {
+  const [coverFailed, setCoverFailed] = useState(false);
+  const hasUsableCover = Boolean(project.coverImage && !coverFailed);
+
+  return (
+    <div className="project-card-image">
+      {hasUsableCover ? (
+        <img
+          src={project.coverImage}
+          alt={`${project.title} cover`}
+          onError={() => setCoverFailed(true)}
+        />
+      ) : (
+        <div className="project-cover-placeholder" aria-hidden="true">
+          <Gamepad2 size={42} />
+          <small>Cover coming soon</small>
+        </div>
+      )}
+
+      <span className="project-genre">{project.tag || "Indie"}</span>
+    </div>
+  );
+}
 
 // Displays all projects owned by the current creator.
 export default function ProjectsPage({ profile, accountLabel, onBack }) {
@@ -131,35 +159,36 @@ export default function ProjectsPage({ profile, accountLabel, onBack }) {
             const isPublished = project.status === "PUBLISHED";
             const isPublishing = publishingId === project.id;
             const isDeleting = deletingId === project.id;
+            const reviewCount = Number(project.reviews) || 0;
+            const statusTone = isPublished
+              ? "published"
+              : isApproved
+                ? "approved"
+                : "pending";
+            const statusLabel = isPublished
+              ? "Published"
+              : isApproved
+                ? "Approved — ready to publish"
+                : `Waiting for review (${project.buildStatus || "PENDING"})`;
 
             return (
               <article
                 className={"project-card " + (project.palette || "mint")}
                 key={project.id || project.slug}
               >
-                <div className="project-card-image">
-                  {project.coverImage ? (
-                    <img
-                      src={project.coverImage}
-                      alt={project.title + " cover"}
-                    />
-                  ) : (
-                    <Gamepad2 size={38} />
-                  )}
-                  <span>{project.tag || "Indie"}</span>
-                </div>
+                <ProjectCover project={project} />
 
                 <div className="project-card-content">
                   <span className="eyebrow">{project.mode || "Game"}</span>
                   <h2>{project.title}</h2>
 
-                  <div className="project-card-stats">
-                    <span>
+                  <div className="project-card-stats" aria-label="Project statistics">
+                    <span className="project-stat">
                       <Star size={15} fill="currentColor" />
-                      {project.score || "New"}
+                      {reviewCount === 0 ? "New" : `${project.score}/5`}
                     </span>
 
-                    <span>
+                    <span className="project-stat">
                       {project.mode === "Download" ? (
                         <Download size={15} />
                       ) : (
@@ -168,16 +197,19 @@ export default function ProjectsPage({ profile, accountLabel, onBack }) {
                       {project.mode || "Game"}
                     </span>
 
-                    <span>{project.reviews || 0} reviews</span>
+                    <span className="project-stat">
+                      <MessageSquare size={15} />
+                      {reviewCount} {reviewCount === 1 ? "review" : "reviews"}
+                    </span>
                   </div>
 
-                  <p className="project-status">
-                    Status: {isPublished
-                      ? "Published"
-                      : isApproved
-                        ? "Approved — ready to publish"
-                        : "Waiting for review (" + project.buildStatus + ")"}
-                  </p>
+                  <div className={`project-status project-status-${statusTone}`}>
+                    <span className="project-status-dot" aria-hidden="true" />
+                    <span>
+                      <small>Project status</small>
+                      <strong>{statusLabel}</strong>
+                    </span>
+                  </div>
 
                   <div className="project-actions">
                     {isApproved && !isPublished && (
@@ -187,6 +219,7 @@ export default function ProjectsPage({ profile, accountLabel, onBack }) {
                         disabled={isPublishing || isDeleting}
                         onClick={() => handlePublish(project.id)}
                       >
+                        <Play size={16} fill="currentColor" />
                         {isPublishing ? "Publishing..." : "Publish game"}
                       </button>
                     )}
@@ -197,6 +230,7 @@ export default function ProjectsPage({ profile, accountLabel, onBack }) {
                         type="button"
                         disabled
                       >
+                        <CheckCircle2 size={16} />
                         Published
                       </button>
                     )}

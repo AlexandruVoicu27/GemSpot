@@ -3053,3 +3053,432 @@ textarea:disabled {
     min-height: 190px;
   }
 }
+
+/* Account eligibility and review-editing messages. */
+.review-state-note,
+.review-form-error {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #705137;
+  background: #17110f;
+  line-height: 1.45;
+}
+
+.review-state-note {
+  color: #ffce70;
+}
+
+.review-state-note.success {
+  border-color: #4f6c3e;
+  background: rgba(138, 223, 114, 0.08);
+  color: #aef18e;
+}
+
+.review-form-error {
+  border-color: #8d4538;
+  background: rgba(184, 74, 54, 0.09);
+  color: #ff9a80;
+  font-weight: 800;
+}
+
+/* Creator responses and administrator moderation inside review cards. */
+.review-action-message {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #705137;
+  background: #17110f;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.review-action-message.error {
+  border-color: #8d4538;
+  background: rgba(184, 74, 54, 0.09);
+  color: #ff9a80;
+}
+
+.review-action-message.success {
+  border-color: #4f6c3e;
+  background: rgba(138, 223, 114, 0.08);
+  color: #aef18e;
+}
+
+.game-review-body {
+  margin-bottom: 14px !important;
+}
+
+.creator-review-reply {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid #5e482f;
+  border-left: 4px solid #ffbf38;
+  background:
+    linear-gradient(90deg, rgba(255, 191, 56, 0.08), transparent 55%),
+    #17110f;
+}
+
+.creator-review-reply-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.creator-review-reply-heading span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #ffce70;
+  font-size: 0.78rem;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.creator-review-reply-heading small {
+  color: #988575;
+}
+
+.creator-review-reply > strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #fff4dc;
+}
+
+.creator-review-reply p {
+  color: #d6c3b0;
+}
+
+.creator-reply-form {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid #4f3a2c;
+  background: #18110f;
+}
+
+.creator-reply-form label {
+  display: block;
+  margin-bottom: 9px;
+  color: #ffce70;
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.creator-reply-form textarea {
+  min-height: 96px;
+  border-color: #5a4333;
+}
+
+.creator-reply-form textarea:focus {
+  border-color: #ffbf38;
+  box-shadow: 0 0 0 2px rgba(255, 191, 56, 0.12);
+}
+
+.creator-reply-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.creator-reply-form-footer small {
+  color: #8f7d6d;
+}
+
+.creator-reply-submit,
+.review-admin-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 13px;
+  border: 2px solid #100c0a;
+  box-shadow: 3px 3px 0 #050403;
+  font-weight: 900;
+}
+
+.creator-reply-submit {
+  background: #ffbf38;
+  color: #160f0b;
+}
+
+.review-admin-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #684138;
+}
+
+.review-admin-controls span {
+  color: #cf8d80;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.review-admin-delete {
+  background: #b64f43;
+  color: #fff6ed;
+}
+
+.creator-reply-submit:disabled,
+.review-admin-delete:disabled {
+  cursor: wait;
+  opacity: 0.55;
+  box-shadow: none;
+}
+
+@media (max-width: 520px) {
+  .creator-review-reply-heading,
+  .creator-reply-form-footer,
+  .review-admin-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .creator-reply-submit,
+  .review-admin-delete {
+    width: 100%;
+  }
+}
+
+
+/* Polished creator-project cards: cover, stats, status, and actions. */
+.project-card {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 24px;
+  padding: 20px;
+  border: 2px solid #443226;
+  background:
+    linear-gradient(135deg, rgba(255, 191, 56, 0.05), transparent 36%),
+    #211814;
+  box-shadow: 7px 7px 0 rgba(5, 4, 3, 0.62);
+  transition:
+    border-color 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.project-card:hover {
+  border-color: #705137;
+  transform: translate(-2px, -2px);
+  box-shadow: 9px 9px 0 rgba(5, 4, 3, 0.72);
+}
+
+.project-card-image {
+  display: grid;
+  position: relative;
+  width: 100%;
+  height: auto;
+  min-height: 170px;
+  aspect-ratio: 16 / 10;
+  place-items: center;
+  overflow: hidden;
+  isolation: isolate;
+  border: 2px solid #100c0a;
+  background:
+    linear-gradient(145deg, rgba(255, 191, 56, 0.22), transparent 50%),
+    linear-gradient(135deg, #8adf72, #4fbf9b);
+  color: #123329;
+  box-shadow: 5px 5px 0 #050403;
+}
+
+.project-card-image > img {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.project-card-image::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(to top, rgba(12, 8, 6, 0.72), transparent 52%);
+  content: "";
+  pointer-events: none;
+}
+
+.project-cover-placeholder {
+  display: grid;
+  position: relative;
+  z-index: 2;
+  place-items: center;
+  gap: 7px;
+}
+
+.project-cover-placeholder small {
+  color: #123329;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.project-card-image > .project-genre {
+  display: inline-flex;
+  position: absolute;
+  right: 9px;
+  bottom: 9px;
+  z-index: 3;
+  width: auto;
+  margin: 0;
+  padding: 6px 9px;
+  border: 1px solid #705137;
+  background: rgba(23, 17, 15, 0.92);
+  color: #fff4dc;
+  font-size: 0.78rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.project-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.project-card-content h2 {
+  margin: 7px 0 0;
+  color: #fff8ea;
+  font-size: clamp(1.7rem, 3vw, 2.35rem);
+  line-height: 1;
+}
+
+.project-card-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 16px;
+}
+
+.project-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid #514033;
+  background: #30241d;
+  color: #ffce70;
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.project-stat:first-child {
+  border-color: #7b592d;
+  background: rgba(255, 191, 56, 0.1);
+}
+
+.project-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  margin: 18px 0;
+  padding: 9px 12px;
+  border: 1px solid #514033;
+  background: #17110f;
+}
+
+.project-status > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+
+.project-status small {
+  color: #8f7c6b;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.project-status strong {
+  color: #f5dfc5;
+  font-size: 0.88rem;
+}
+
+.project-status-dot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border: 2px solid #100c0a;
+  border-radius: 50%;
+  background: #ffbf38;
+  box-shadow: 2px 2px 0 #050403;
+}
+
+.project-status-published {
+  border-color: #4f6c3e;
+  background: rgba(138, 223, 114, 0.08);
+}
+
+.project-status-published .project-status-dot,
+.project-status-approved .project-status-dot {
+  background: #8adf72;
+}
+
+.project-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: auto;
+}
+
+.project-publish-button,
+.project-open-button,
+.project-delete-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 9px 14px;
+  border: 2px solid #100c0a;
+  box-shadow: 4px 4px 0 #050403;
+  font-weight: 900;
+}
+
+.project-open-button {
+  border-color: #4f6c3e;
+  background: #283621;
+  color: #aef18e;
+  box-shadow: none;
+}
+
+.project-open-button:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.project-publish-button:hover,
+.project-delete-button:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 #050403;
+}
+
+@media (max-width: 760px) {
+  .project-card {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 16px;
+  }
+
+  .project-card-image {
+    min-height: 190px;
+  }
+}

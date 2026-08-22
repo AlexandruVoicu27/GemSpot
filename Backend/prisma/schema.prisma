@@ -33,37 +33,40 @@ enum ClaimStatus {
 }
 
 model User {
-  id           String      @id @default(uuid()) @db.Uuid
-  username     String      @unique
-  email        String      @unique
-  role         UserRole    @default(USER)
-  isBanned     Boolean     @default(false) @map("is_banned")
-  createdAt    DateTime    @default(now()) @map("created_at")
-  updatedAt    DateTime    @updatedAt @map("updated_at")
-  games        Game[]
-  claims       GameClaim[]
-  reviews      Review[]
+  id            String        @id @default(uuid()) @db.Uuid
+  username      String        @unique
+  email         String        @unique
+  role          UserRole      @default(USER)
+  isBanned      Boolean       @default(false) @map("is_banned")
+  banReason     String?       @map("ban_reason")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @default(now()) @updatedAt @map("updated_at")
+  displayName   String?       @map("display_name")
+  bio           String?
+  avatarUrl     String?       @map("avatar_url")
+  games         Game[]
+  claims        GameClaim[]
+  reviews       Review[]
+  reviewReplies ReviewReply[]
 
-  displayName String? @map("display_name")
-  bio         String?
-  avatarUrl   String? @map("avatar_url")
   @@map("users")
 }
 
 model Game {
-  id          String      @id @default(uuid()) @db.Uuid
-  creatorId   String      @map("creator_id") @db.Uuid
-  title       String
-  slug        String      @unique
-  description String
-  genre       String?
-  status      GameStatus  @default(DRAFT)
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
-  creator     User        @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  files       GameFile[]
-  claims      GameClaim[]
-  reviews     Review[]
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  creatorId     String     @map("creator_id") @db.Uuid
+  title         String
+  slug          String     @unique
+  description   String
+  genre         String?
+  status        GameStatus @default(DRAFT)
+  coverImageUrl String?    @map("cover_image_url")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @default(now()) @updatedAt @map("updated_at")
+  creator       User       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  files         GameFile[]
+  claims        GameClaim[]
+  reviews       Review[]
 
   @@index([creatorId])
   @@index([status])
@@ -71,7 +74,7 @@ model Game {
 }
 
 model GameFile {
-  id        String       @id @default(uuid()) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   gameId    String       @map("game_id") @db.Uuid
   kind      GameFileKind
   fileName  String       @map("file_name")
@@ -92,7 +95,7 @@ model GameFile {
 }
 
 model GameClaim {
-  id        String      @id @default(uuid()) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId    String      @map("user_id") @db.Uuid
   gameId    String      @map("game_id") @db.Uuid
   status    ClaimStatus @default(CLAIMED)
@@ -108,17 +111,18 @@ model GameClaim {
 }
 
 model Review {
-  id        String    @id @default(uuid()) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId    String    @map("user_id") @db.Uuid
   gameId    String    @map("game_id") @db.Uuid
   claimId   String    @unique @map("claim_id") @db.Uuid
   rating    Int
   body      String
   createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   game      Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
   claim     GameClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  reply ReviewReply?
 
   @@unique([userId, gameId])
   @@index([gameId])
@@ -128,7 +132,22 @@ model AppSetting {
   key       String   @id
   value     Json?
   updatedBy String?  @map("updated_by") @db.Uuid
-  updatedAt DateTime @updatedAt @map("updated_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("app_settings")
+}
+
+model ReviewReply {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reviewId  String   @unique @map("review_id") @db.Uuid
+  creatorId String   @map("creator_id") @db.Uuid
+  body      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  review  Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  creator User   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId])
+  @@map("review_replies")
 }

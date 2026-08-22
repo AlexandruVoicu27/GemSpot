@@ -6,7 +6,9 @@ import { defineConfig } from "prisma/config";
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
-    path: "prisma/migrations",
+    // The Supabase database existed before Prisma migration history was tracked.
+    // Keep the original migrations untouched and use a clean, baselined history.
+    path: "prisma/migrations_baselined",
   },
   datasource: {
     url: process.env["DATABASE_URL"],

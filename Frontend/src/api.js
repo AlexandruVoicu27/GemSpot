@@ -225,6 +225,12 @@ export async function downloadManualReviewFile(fileId, filename = "game-upload")
 export async function getGame(slug) {
   return apiFetch(`/games/${encodeURIComponent(slug)}`);
 }
+// Loads the logged-in account's permanent claim and review state.
+export async function getReviewState(slug) {
+  return apiFetch(
+    `/games/${encodeURIComponent(slug)}/review-state`
+  );
+}
 
 export async function claimGame(slug) {
   return apiFetch(`/games/${encodeURIComponent(slug)}/claim`, {
@@ -240,6 +246,30 @@ export async function saveGameReview(slug, rating, body) {
     },
     body: JSON.stringify({ rating, body }),
   });
+}
+
+// Administrators can permanently remove a review.
+export async function deleteGameReview(slug, reviewId) {
+  return apiFetch(
+    `/games/${encodeURIComponent(slug)}/reviews/${encodeURIComponent(reviewId)}`,
+    {
+      method: "DELETE",
+    }
+  );
+}
+
+// The game creator can create or update one reply.
+export async function saveCreatorReply(slug, reviewId, body) {
+  return apiFetch(
+    `/games/${encodeURIComponent(slug)}/reviews/${encodeURIComponent(reviewId)}/reply`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ body }),
+    }
+  );
 }
 
 export function getGameFileUrl(fileId) {

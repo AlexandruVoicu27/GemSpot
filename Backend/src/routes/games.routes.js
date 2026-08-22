@@ -1,9 +1,157 @@
 const express = require("express");
 const { requireSupabaseConfig, supabaseAdmin } = require("../db");
 const requireAuth = require("../middleware/requireAuth");
-
+const requireAdmin = require("../middleware/requireAdmin");
 const router = express.Router();
 
+
+
+// Permanently deletes a review.
+// Authentication proves the account and requireAdmin checks its database role.
+router.delete(
+  "/:slug/reviews/:reviewId",
+  requireAuth,
+  requireAdmin,
+  async (req, res) => {
+    if (!requireSupabaseConfig(res)) return;
+
+    const gameResult = await getPublishedGame(req.params.slug);
+
+    if (gameResult.error) {
+      return res.status(500).json({
+        error: "Could not load the game.",
+      });
+    }
+
+    if (!gameResult.data) {
+      return res.status(404).json({
+        error: "Game not found.",
+      });
+    }
+
+    // game_id prevents an ID belonging to a different game from being deleted.
+    const deleteResult = await supabaseAdmin
+      .from("reviews")
+      .delete()
+      .eq("id", req.params.reviewId)
+      .eq("game_id", gameResult.data.id)
+      .select("id")
+      .maybeSingle();
+
+    if (deleteResult.error) {
+      return res.status(500).json({
+        error: "Could not delete the review.",
+      });
+    }
+
+    if (!deleteResult.data) {
+      return res.status(404).json({
+        error: "Review not found.",
+      });
+    }
+
+    return res.json({
+      message: "Review deleted.",
+      reviewId: deleteResult.data.id,
+    });
+  }
+);
+
+
+// Creates or updates the game creator's reply.
+// There can only be one reply per review because review_id is unique.
+router.put(
+  "/:slug/reviews/:reviewId/reply",
+  requireAuth,
+  async (req, res) => {
+    if (!requireSupabaseConfig(res)) return;
+
+    const body = String(req.body?.body || "").trim();
+
+    if (body.length < 2 || body.length > 2000) {
+      return res.status(400).json({
+        error: "Reply must contain between 2 and 2000 characters.",
+      });
+    }
+
+    const gameResult = await getPublishedGame(req.params.slug);
+
+    if (gameResult.error) {
+      return res.status(500).json({
+        error: "Could not load the game.",
+      });
+    }
+
+    if (!gameResult.data) {
+      return res.status(404).json({
+        error: "Game not found.",
+      });
+    }
+
+    // This is the real creator permission check.
+    if (gameResult.data.creator_id !== req.user.id) {
+      return res.status(403).json({
+        error: "Only the game's creator can reply to its reviews.",
+      });
+    }
+
+    // Confirm that the review belongs to this particular game.
+    const reviewResult = await supabaseAdmin
+      .from("reviews")
+      .select("id")
+      .eq("id", req.params.reviewId)
+      .eq("game_id", gameResult.data.id)
+      .maybeSingle();
+
+    if (reviewResult.error) {
+      return res.status(500).json({
+        error: "Could not load the review.",
+      });
+    }
+
+    if (!reviewResult.data) {
+      return res.status(404).json({
+        error: "Review not found.",
+      });
+    }
+
+    // Upsert means create the first time and update afterward.
+    const replyResult = await supabaseAdmin
+      .from("review_replies")
+      .upsert(
+        {
+          review_id: reviewResult.data.id,
+          creator_id: req.user.id,
+          body,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "review_id",
+        }
+      )
+      .select(
+        `
+          id,
+          body,
+          created_at,
+          updated_at,
+          creator:users(username, display_name)
+        `
+      )
+      .single();
+
+    if (replyResult.error) {
+      return res.status(500).json({
+        error: "Could not save the creator reply.",
+      });
+    }
+
+    return res.json({
+      message: "Creator reply saved.",
+      reply: replyResult.data,
+    });
+  }
+);
 function getCreatorName(creator) {
   if (Array.isArray(creator)) {
     return creator[0]?.username || "Unknown creator";
@@ -253,8 +401,21 @@ router.get("/:slug", async (req, res) => {
         cover_image_url,
         creator:users(id, username, display_name),
         files:game_files(id, kind, file_name, url, size_bytes, created_at),
-        reviews(id, rating, body, created_at, updated_at, user:users(username, display_name))
-      `
+        reviews(
+          id,
+          rating,
+          body,
+          created_at,
+          updated_at,
+          user:users(username, display_name),
+          reply:review_replies(
+            id,
+            body,
+            created_at,
+            updated_at,
+            creator:users(username, display_name)
+          )
+        )      `
     );
 
   const { data, error } = await query.eq("slug", req.params.slug).maybeSingle();
@@ -329,6 +490,58 @@ async function getPublishedGame(slug) {
 }
 
 // Records that the authenticated user got/played the game.
+router.get("/:slug/review-state", requireAuth, async (req, res) => {
+  if (!requireSupabaseConfig(res)) {
+    return;
+  }
+  // Only published games can be downloaded and reviewed.
+  const gameResult = await getPublishedGame(req.params.slug);
+  if (gameResult.error) {
+    return res.status(500).json({
+      error: "Could not load the game.",
+    });
+  }
+if (!gameResult.data) {
+    return res.status(404).json({
+      error: "Game not found.",
+    });
+  }
+    const game = gameResult.data;
+
+    const [claimResult, reviewResult] = await Promise.all([
+    supabaseAdmin
+      .from("game_claims")
+      .select("id, status, created_at, reviewed_at")
+      .eq("user_id", req.user.id)
+      .eq("game_id", game.id)
+      .maybeSingle(),
+
+    supabaseAdmin
+      .from("reviews")
+      .select("id, rating, body, created_at, updated_at")
+      .eq("user_id", req.user.id)
+      .eq("game_id", game.id)
+      .maybeSingle(),
+  ]);
+
+  if (claimResult.error || reviewResult.error) {
+    return res.status(500).json({
+      error: "Could not load your review eligibility.",
+    });
+  }
+  return res.json({
+     // A review also proves a claim existed because reviews reference claims.
+    hasClaimed: Boolean(claimResult.data || reviewResult.data),
+
+    // The frontend uses this to disable the creator's review form.
+    // The review submission endpoint must still enforce this rule too.
+    isCreator: game.creator_id === req.user.id,
+
+    // If this is not null, the frontend can load it for editing.
+    review: reviewResult.data || null,
+  });
+});
+
 router.post("/:slug/claim", requireAuth, async (req, res) => {
   if (!requireSupabaseConfig(res)) return;
 

@@ -156,23 +156,6 @@ The game page should include:
 - existing reviews
 - review form
 - related games
----
-GemSpot cannot fully prove that someone played a downloaded archive. It can verify that the user requested the download.
-
-The review system should:
-- show existing reviews
-- calculate the average rating
-- show the total review count
-- allow one review per user per game
-- allow users to edit their review
-- prevent creators from reviewing their own games
-- require a download before reviewing
-- show useful validation errors
-- prevent duplicate submissions
-- limit review spam
-- allow users to report inappropriate reviews
-- allow moderators to remove reported reviews
-- eventually allow creators to reply to reviews
 
 ## Improve creator project management
 Creators should be able to:

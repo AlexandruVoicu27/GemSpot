@@ -568,10 +568,11 @@ return (
           </div>
         </section>
       ) : isGamePage ? (
-        <GamePage
+       <GamePage
           slug={gameSlug}
           focusReviews={focusGameReviews}
           isAuthenticated={isAuthenticated}
+          profile={profile}
           onRequireAuth={requireAccount}
           onBack={showHomePage}
         />

@@ -5,14 +5,21 @@ import {
   Gamepad2,
   MessageSquare,
   Play,
+  Reply,
   Star,
+  Trash2,
 } from "lucide-react";
 import {
   claimGame,
   getGame,
   getGameFileUrl,
+  getReviewState,
   saveGameReview,
+  saveCreatorReply,
+  deleteGameReview,
 } from "../api";
+
+
 
 function displayReviewUser(review) {
   return (
@@ -20,6 +27,23 @@ function displayReviewUser(review) {
     review.user?.username ||
     "Anonymous"
   );
+}
+
+// Supabase can return a one-to-one relationship as an object or a one-item array.
+function getCreatorReply(review) {
+  if (Array.isArray(review?.reply)) {
+    return review.reply[0] || null;
+  }
+
+  return review?.reply || null;
+}
+
+function displayReplyCreator(reply) {
+  const creator = Array.isArray(reply?.creator)
+    ? reply.creator[0]
+    : reply?.creator;
+
+  return creator?.display_name || creator?.username || "Game creator";
 }
 
 function formatDate(value) {
@@ -34,12 +58,26 @@ export default function GamePage({
   slug,
   focusReviews,
   isAuthenticated,
+  profile,
   onRequireAuth,
   onBack,
 }) {
+  const isAdmin = profile?.role === "ADMIN";
   const [game, setGame] = useState(null);
   const [rating, setRating] = useState(0);
   const [reviewBody, setReviewBody] = useState("");
+  const [existingReview, setExistingReview] = useState(null);
+  // Stores a separate reply draft for each review.
+  const [replyDrafts, setReplyDrafts] = useState({});
+  const [activeReviewAction, setActiveReviewAction] = useState(null);
+  const [reviewActionError, setReviewActionError] = useState("");
+  const [reviewActionNotice, setReviewActionNotice] = useState("");
+  // Creators cannot review their own games.
+  const [isCreator, setIsCreator] = useState(false);
+  // Prevents the form from making decisions while account state is loading.
+  const [isReviewStateLoading, setIsReviewStateLoading] = useState(false);
+  // A validation error should not make the entire game page disappear.
+  const [reviewError, setReviewError] = useState("");
   const [hasClaimed, setHasClaimed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isGetting, setIsGetting] = useState(false);
@@ -48,6 +86,149 @@ export default function GamePage({
   const [notice, setNotice] = useState("");
   const reviewsRef = useRef(null);
 
+
+  useEffect(() => {
+  let active = true;
+
+  // Guests do not have private account state to load.
+  if (!isAuthenticated) {
+    setHasClaimed(false);
+    setExistingReview(null);
+    setIsCreator(false);
+    setIsReviewStateLoading(false);
+    return undefined;
+  }
+   // Reset state when navigating from one game to another.
+  setHasClaimed(false);
+  setExistingReview(null);
+  setIsCreator(false);
+  setRating(0);
+  setReviewBody("");
+  setReviewError("");
+  setIsReviewStateLoading(true);
+
+  getReviewState(slug)
+    .then((state) => {
+      // Ignore the result if the component was removed while loading.
+      if (!active) {
+        return;
+      }
+
+      setHasClaimed(Boolean(state.hasClaimed));
+      setIsCreator(Boolean(state.isCreator));
+      setExistingReview(state.review || null);
+
+      // If the user already reviewed this game, load that review into
+      // the form so pressing the button updates it instead of duplicating it.
+      if (state.review) {
+        setRating(state.review.rating);
+        setReviewBody(state.review.body);
+      }
+    })
+    .catch((stateError) => {
+      if (active) {
+        setReviewError(
+          stateError.message || "Could not load your review status."
+        );
+      }
+    })
+    .finally(() => {
+      if (active) {
+        setIsReviewStateLoading(false);
+      }
+    });
+
+  // Prevent an old request from updating a different page.
+  return () => {
+    active = false;
+  };
+}, [slug, isAuthenticated]);
+
+async function handleDeleteReview(review) {
+  const confirmed = window.confirm(
+    `Delete ${displayReviewUser(review)}'s review permanently?`
+  );
+
+  if (!confirmed) return;
+
+  setActiveReviewAction(review.id);
+  setReviewActionError("");
+  setReviewActionNotice("");
+
+  try {
+    await deleteGameReview(game.slug, review.id);
+
+    // Remove the deleted review immediately from the page.
+    setGame((currentGame) => ({
+      ...currentGame,
+      reviews: currentGame.reviews.filter(
+        (currentReview) => currentReview.id !== review.id
+      ),
+    }));
+
+    if (existingReview?.id === review.id) {
+      setExistingReview(null);
+    }
+
+    setReviewActionNotice("Review deleted.");
+  } catch (deleteError) {
+    setReviewActionError(
+      deleteError.message || "Could not delete the review."
+    );
+  } finally {
+    setActiveReviewAction(null);
+  }
+}
+
+async function handleSaveReply(review) {
+  const existingReply = getCreatorReply(review);
+  const body = (
+    replyDrafts[review.id] ??
+    existingReply?.body ??
+    ""
+  ).trim();
+
+  if (body.length < 2) {
+    setReviewActionError("Your creator response must be at least 2 characters.");
+    return;
+  }
+
+  setActiveReviewAction(review.id);
+  setReviewActionError("");
+  setReviewActionNotice("");
+
+  try {
+    const result = await saveCreatorReply(
+      game.slug,
+      review.id,
+      body
+    );
+
+    // Replace only the updated review's reply.
+    setGame((currentGame) => ({
+      ...currentGame,
+      reviews: currentGame.reviews.map((currentReview) =>
+        currentReview.id === review.id
+          ? { ...currentReview, reply: result.reply }
+          : currentReview
+      ),
+    }));
+
+    setReplyDrafts((currentDrafts) => ({
+      ...currentDrafts,
+      [review.id]: result.reply.body,
+    }));
+    setReviewActionNotice(
+      existingReply ? "Creator response updated." : "Creator response posted."
+    );
+  } catch (replyError) {
+    setReviewActionError(
+      replyError.message || "Could not save your reply."
+    );
+  } finally {
+    setActiveReviewAction(null);
+  }
+}
   useEffect(() => {
     let active = true;
 
@@ -152,14 +333,23 @@ export default function GamePage({
       setError("Use “Get game & review” first.");
       return;
     }
+      // Do not make an eligibility decision until the database check finishes.
+    if (isReviewStateLoading) {
+      setReviewError("Please wait while we check your account.");
+      return;
+    }
+     if (isCreator) {
+      setReviewError("You cannot review your own game.");
+      return;
 
+    }
     if (!rating) {
       setError("Choose a rating first.");
       return;
     }
 
-    if (reviewBody.trim().length < 10) {
-      setError("Your review must be at least 10 characters.");
+      if (reviewBody.trim().length < 10) {
+        setError("Your review must be at least 10 characters.");
       return;
     }
 
@@ -167,19 +357,34 @@ export default function GamePage({
     setError("");
     setNotice("");
 
-    try {
-      await saveGameReview(game.slug, rating, reviewBody.trim());
+   try {
+  // Save the backend response in a variable named result.
+  const result = await saveGameReview(
+    game.slug,
+    rating,
+    reviewBody.trim()
+  );
 
-      const refreshedGame = await getGame(game.slug);
-      setGame(refreshedGame);
-      setNotice("Your review was saved.");
-    } catch (submitError) {
-      setError(submitError.message || "Could not save your review.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  // The backend response contains the created or updated review.
+  setExistingReview(result.review);
 
+  // Reload the public information, including reviews and average rating.
+  const refreshedGame = await getGame(game.slug);
+  setGame(refreshedGame);
+
+  setNotice(
+    existingReview
+      ? "Your review was updated."
+      : "Your review was submitted."
+  );
+} catch (submitError) {
+  setReviewError(
+    submitError.message || "Could not save your review."
+  );
+} finally {
+  setIsSubmitting(false);
+}
+};
   return (
     <section className="game-page">
       <button className="back-button" type="button" onClick={onBack}>
@@ -226,10 +431,6 @@ export default function GamePage({
                   <MessageSquare size={16} />
                   {reviews.length} reviews
                 </span>
-                <span>
-                  {buildFile ? <Download size={16} /> : <Play size={16} />}
-                  {buildFile ? "Get build" : "Unavailable"}
-                </span>
               </div>
 
               <p className="game-page-description">
@@ -254,10 +455,44 @@ export default function GamePage({
             <section className="game-review-form-panel">
               <span className="eyebrow">Leave feedback</span>
               <h2>How was the game?</h2>
-              <p>
-                Get the game first, then tell the creator what worked and what
-                could improve.
+            <p>
+              Get the game first, then tell the creator what worked and what
+              could improve.
+            </p>
+
+            {isReviewStateLoading && (
+              <p className="review-state-note">
+                Checking your account's game access...
               </p>
+            )}
+
+            {!isReviewStateLoading && isCreator && (
+              <p className="review-state-note">
+                You created this game, so you cannot review it.
+              </p>
+            )}
+
+            {!isReviewStateLoading &&
+              isAuthenticated &&
+              !isCreator &&
+              hasClaimed &&
+              !existingReview && (
+                <p className="review-state-note success">
+                  This game is on your account. You can leave a review.
+                </p>
+              )}
+
+            {existingReview && (
+              <p className="review-state-note success">
+                Editing your existing review.
+              </p>
+            )}
+
+            {reviewError && (
+              <p className="review-form-error">
+                {reviewError}
+              </p>
+            )}
 
               <form onSubmit={handleSubmitReview}>
                 <div className="game-rating-buttons" aria-label="Game rating">
@@ -282,24 +517,45 @@ export default function GamePage({
                 </div>
 
                 <textarea
-                  value={reviewBody}
-                  disabled={!isAuthenticated}
-                  onChange={(event) => setReviewBody(event.target.value)}
-                  placeholder={
-                    isAuthenticated
-                      ? "What worked? What broke? Would you play it again?"
-                      : "Log in to write a review."
-                  }
-                />
+                value={reviewBody}
+                disabled={
+                  !isAuthenticated ||
+                  isReviewStateLoading ||
+                  isCreator ||
+                  !hasClaimed
+                }
+                onChange={(event) => {
+                  setReviewBody(event.target.value);
+                  setReviewError("");
+                }}
+                placeholder={
+                  !isAuthenticated
+                    ? "Log in to write a review."
+                    : isCreator
+                      ? "Creators cannot review their own games."
+                      : !hasClaimed
+                        ? "Get the game before writing a review."
+                        : "What worked? What broke? Would you play it again?"
+                }
+              />
 
-                <button
-                  className="game-review-submit"
-                  type="submit"
-                  disabled={isSubmitting}
-                >
-                  <MessageSquare size={17} />
-                  {isSubmitting ? "Saving..." : "Submit review"}
-                </button>
+                  <button
+                className="game-review-submit"
+                type="submit"
+                disabled={
+                  isSubmitting ||
+                  isReviewStateLoading ||
+                  isCreator
+                }
+              >
+                <MessageSquare size={17} />
+
+                {isSubmitting
+                  ? "Saving..."
+                  : existingReview
+                    ? "Update review"
+                    : "Submit review"}
+              </button>
               </form>
             </section>
 
@@ -315,32 +571,134 @@ export default function GamePage({
                 <strong>{reviews.length}</strong>
               </div>
 
+              {reviewActionError && (
+                <p className="review-action-message error" role="alert">
+                  {reviewActionError}
+                </p>
+              )}
+
+              {reviewActionNotice && (
+                <p className="review-action-message success" role="status">
+                  {reviewActionNotice}
+                </p>
+              )}
+
               {reviews.length === 0 && (
                 <p className="empty-state">
                   No reviews yet. Be the first to play it.
                 </p>
               )}
 
-              {reviews.map((review) => (
-                <article className="game-review-item" key={review.id}>
-                  <div className="game-review-item-heading">
-                    <strong>{displayReviewUser(review)}</strong>
-                    <small>{formatDate(review.created_at)}</small>
-                  </div>
+              {reviews.map((review) => {
+                const creatorReply = getCreatorReply(review);
+                const replyDraft =
+                  replyDrafts[review.id] ?? creatorReply?.body ?? "";
+                const actionInProgress = activeReviewAction === review.id;
 
-                  <div className="game-review-stars">
-                    {[1, 2, 3, 4, 5].map((value) => (
-                      <Star
-                        key={value}
-                        size={15}
-                        fill={value <= review.rating ? "currentColor" : "none"}
-                      />
-                    ))}
-                  </div>
+                return (
+                  <article className="game-review-item" key={review.id}>
+                    <div className="game-review-item-heading">
+                      <strong>{displayReviewUser(review)}</strong>
+                      <small>{formatDate(review.created_at)}</small>
+                    </div>
 
-                  <p>{review.body}</p>
-                </article>
-              ))}
+                    <div className="game-review-stars">
+                      {[1, 2, 3, 4, 5].map((value) => (
+                        <Star
+                          key={value}
+                          size={15}
+                          fill={value <= review.rating ? "currentColor" : "none"}
+                        />
+                      ))}
+                    </div>
+
+                    <p className="game-review-body">{review.body}</p>
+
+                    {creatorReply && (
+                      <aside className="creator-review-reply">
+                        <div className="creator-review-reply-heading">
+                          <span>
+                            <Reply size={15} />
+                            Creator response
+                          </span>
+                          <small>
+                            {formatDate(
+                              creatorReply.updated_at ||
+                                creatorReply.created_at
+                            )}
+                          </small>
+                        </div>
+                        <strong>{displayReplyCreator(creatorReply)}</strong>
+                        <p>{creatorReply.body}</p>
+                      </aside>
+                    )}
+
+                    {isCreator && (
+                      <form
+                        className="creator-reply-form"
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          handleSaveReply(review);
+                        }}
+                      >
+                        <label>
+                          {creatorReply
+                            ? "Edit your creator response"
+                            : "Respond as the creator"}
+                        </label>
+                        <textarea
+                          value={replyDraft}
+                          maxLength={2000}
+                          rows={3}
+                          disabled={actionInProgress}
+                          placeholder="Thank the player, answer their feedback, or share an update..."
+                          onChange={(event) => {
+                            setReplyDrafts((currentDrafts) => ({
+                              ...currentDrafts,
+                              [review.id]: event.target.value,
+                            }));
+                            setReviewActionError("");
+                            setReviewActionNotice("");
+                          }}
+                        />
+                        <div className="creator-reply-form-footer">
+                          <small>{replyDraft.length}/2000</small>
+                          <button
+                            className="creator-reply-submit"
+                            type="submit"
+                            disabled={
+                              actionInProgress ||
+                              replyDraft.trim().length < 2
+                            }
+                          >
+                            <Reply size={16} />
+                            {actionInProgress
+                              ? "Saving..."
+                              : creatorReply
+                                ? "Update response"
+                                : "Post response"}
+                          </button>
+                        </div>
+                      </form>
+                    )}
+
+                    {isAdmin && (
+                      <div className="review-admin-controls">
+                        <span>Administrator moderation</span>
+                        <button
+                          className="review-admin-delete"
+                          type="button"
+                          disabled={actionInProgress}
+                          onClick={() => handleDeleteReview(review)}
+                        >
+                          <Trash2 size={16} />
+                          {actionInProgress ? "Working..." : "Delete review"}
+                        </button>
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
             </section>
           </section>
         </>
