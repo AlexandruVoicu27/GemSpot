@@ -3832,4 +3832,66 @@ textarea:disabled {
   .project-file-button {
     width: 100%;
   }
+
+  .reviewer-follow-up {
+  margin-top: 14px;
+  padding: 13px 13px 13px 18px;
+  border-top: 1px solid #4f3a2c;
+  border-left: 3px solid #8adf72;
+  background: rgba(138, 223, 114, 0.055);
+}
+
+.reviewer-follow-up-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.reviewer-follow-up-heading span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #aef18e;
+  font-size: 0.78rem;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.reviewer-follow-up-heading small {
+  color: #988575;
+}
+
+.reviewer-follow-up strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #fff4dc;
+}
+
+.reviewer-follow-up-form {
+  border-color: #48643b;
+}
+
+.reviewer-follow-up-form label {
+  color: #aef18e;
+}
+
+.reviewer-follow-up-form textarea:focus {
+  border-color: #8adf72;
+  box-shadow: 0 0 0 2px rgba(138, 223, 114, 0.12);
+}
+
+.reviewer-follow-up-submit {
+  background: #8adf72;
+  color: #10200d;
+}
+
+@media (max-width: 520px) {
+  .reviewer-follow-up-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
 }

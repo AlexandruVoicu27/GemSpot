@@ -17,6 +17,7 @@ import {
   saveGameReview,
   saveCreatorReply,
   deleteGameReview,
+  saveReviewerFollowUp,
 } from "../api";
 
 
@@ -78,6 +79,8 @@ export default function GamePage({
   const [isReviewStateLoading, setIsReviewStateLoading] = useState(false);
   // A validation error should not make the entire game page disappear.
   const [reviewError, setReviewError] = useState("");
+  // Stores a separate follow-up draft for each review.
+  const [followUpDrafts, setFollowUpDrafts] = useState({});
   const [hasClaimed, setHasClaimed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isGetting, setIsGetting] = useState(false);
@@ -123,12 +126,6 @@ export default function GamePage({
       setIsCreator(Boolean(state.isCreator));
       setExistingReview(state.review || null);
 
-      // If the user already reviewed this game, load that review into
-      // the form so pressing the button updates it instead of duplicating it.
-      if (state.review) {
-        setRating(state.review.rating);
-        setReviewBody(state.review.body);
-      }
     })
     .catch((stateError) => {
       if (active) {
@@ -230,6 +227,64 @@ async function handleSaveReply(review) {
   } catch (replyError) {
     setReviewActionError(
       replyError.message || "Could not save your reply."
+    );
+  } finally {
+    setActiveReviewAction(null);
+  }
+}
+
+async function handleSaveReviewerFollowUp(review) {
+  const creatorReply = getCreatorReply(review);
+
+  const body = (
+    followUpDrafts[review.id] ??
+    creatorReply?.reviewer_body ??
+    ""
+  ).trim();
+
+  if (body.length < 2) {
+    setReviewActionError("Your reply must be at least 2 characters.");
+    return;
+  }
+
+  setActiveReviewAction(review.id);
+  setReviewActionError("");
+  setReviewActionNotice("");
+
+  try {
+    const result = await saveReviewerFollowUp(
+      game.slug,
+      review.id,
+      body
+    );
+
+    // Replace this review's response with the updated backend result.
+    setGame((currentGame) => ({
+      ...currentGame,
+      reviews: currentGame.reviews.map((currentReview) =>
+        currentReview.id === review.id
+          ? {
+              ...currentReview,
+              reply: result.reply,
+            }
+          : currentReview
+      ),
+    }));
+
+    // Clear the textbox after saving.
+    setFollowUpDrafts((currentDrafts) => ({
+      ...currentDrafts,
+      [review.id]: "",
+    }));
+
+    setReviewActionNotice(
+      creatorReply?.reviewer_body
+        ? "Your reply was updated."
+        : "Your reply was posted."
+    );
+  } catch (followUpError) {
+    setReviewActionError(
+      followUpError.message || "Could not save your reply."
     );
   } finally {
     setActiveReviewAction(null);
@@ -349,6 +404,12 @@ async function handleSaveReply(review) {
       return;
 
     }
+    if (existingReview) {
+      setReviewError(
+        "Your review is already published. Continue the conversation in the reviews section."
+      );
+      return;
+    }
     if (!rating) {
       setError("Choose a rating first.");
       return;
@@ -371,18 +432,17 @@ async function handleSaveReply(review) {
     reviewBody.trim()
   );
 
-  // The backend response contains the created or updated review.
+  // The backend response contains the newly created review.
   setExistingReview(result.review);
 
   // Reload the public information, including reviews and average rating.
   const refreshedGame = await getGame(game.slug);
   setGame(refreshedGame);
 
-  setNotice(
-    existingReview
-      ? "Your review was updated."
-      : "Your review was submitted."
-  );
+  // The saved review is now visible in the list, so clear the editor.
+  setReviewBody("");
+
+  setNotice("Your review was submitted.");
 } catch (submitError) {
   setReviewError(
     submitError.message || "Could not save your review."
@@ -512,18 +572,18 @@ async function handleSaveReply(review) {
                 </p>
               )}
 
-            {existingReview && (
-              <p className="review-state-note success">
-                Editing your existing review.
-              </p>
-            )}
-
             {reviewError && (
               <p className="review-form-error">
                 {reviewError}
               </p>
             )}
 
+            {existingReview ? (
+              <p className="review-state-note success">
+                Your review is published and cannot be edited. Continue the
+                conversation in the Reviews section.
+              </p>
+            ) : (
               <form onSubmit={handleSubmitReview}>
                 <div className="game-rating-buttons" aria-label="Game rating">
                   {[1, 2, 3, 4, 5].map((value) => (
@@ -580,13 +640,10 @@ async function handleSaveReply(review) {
               >
                 <MessageSquare size={17} />
 
-                {isSubmitting
-                  ? "Saving..."
-                  : existingReview
-                    ? "Update review"
-                    : "Submit review"}
+                {isSubmitting ? "Saving..." : "Submit review"}
               </button>
               </form>
+            )}
             </section>
 
             <section
@@ -621,10 +678,22 @@ async function handleSaveReply(review) {
 
               {reviews.map((review) => {
                 const creatorReply = getCreatorReply(review);
-                const replyDraft =
-                  replyDrafts[review.id] ?? creatorReply?.body ?? "";
-                const actionInProgress = activeReviewAction === review.id;
+                const reviewUser = Array.isArray(review.user)
+                ? review.user[0]
+                : review.user;
 
+              const isReviewAuthor =
+                isAuthenticated &&
+                Boolean(profile?.id) &&
+                reviewUser?.id === profile.id;
+
+              const followUpDraft =
+                followUpDrafts[review.id] ??
+                creatorReply?.reviewer_body ??
+                "";             
+                const replyDraft =
+                replyDrafts[review.id] ?? creatorReply?.body ?? "";
+                const actionInProgress = activeReviewAction === review.id;
                 return (
                   <article className="game-review-item" key={review.id}>
                     <div className="game-review-item-heading">
@@ -660,7 +729,82 @@ async function handleSaveReply(review) {
                         </div>
                         <strong>{displayReplyCreator(creatorReply)}</strong>
                         <p>{creatorReply.body}</p>
+                        
+                        {creatorReply.reviewer_body && (
+                      <div className="reviewer-follow-up">
+                        <div className="reviewer-follow-up-heading">
+                          <span>
+                            <Reply size={14} />
+                            Reviewer follow-up
+                          </span>
+
+                          <small>
+                            {formatDate(
+                              creatorReply.reviewer_updated_at ||
+                                creatorReply.reviewer_created_at
+                            )}
+                          </small>
+                        </div>
+
+                        <strong>{displayReviewUser(review)}</strong>
+                        <p>{creatorReply.reviewer_body}</p>
+                      </div>
+                    )}
+
                       </aside>
+                      
+                    )}
+
+                    {isReviewAuthor && creatorReply && (
+                      <form
+                        className="creator-reply-form reviewer-follow-up-form"
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          handleSaveReviewerFollowUp(review);
+                        }}
+                      >
+                        <label>
+                          {creatorReply.reviewer_body
+                            ? "Edit your reply to the creator"
+                            : "Reply to the creator"}
+                        </label>
+
+                        <textarea
+                          value={followUpDraft}
+                          maxLength={2000}
+                          rows={3}
+                          disabled={actionInProgress}
+                          placeholder="Reply to what the creator said..."
+                          onChange={(event) => {
+                            setFollowUpDrafts((currentDrafts) => ({
+                              ...currentDrafts,
+                              [review.id]: event.target.value,
+                            }));
+                            setReviewActionError("");
+                            setReviewActionNotice("");
+                          }}
+                        />
+
+                        <div className="creator-reply-form-footer">
+                          <small>{followUpDraft.length}/2000</small>
+
+                          <button
+                            className="creator-reply-submit reviewer-follow-up-submit"
+                            type="submit"
+                            disabled={
+                              actionInProgress ||
+                              followUpDraft.trim().length < 2
+                            }
+                          >
+                            <Reply size={16} />
+                            {actionInProgress
+                              ? "Saving..."
+                              : creatorReply.reviewer_body
+                                ? "Update reply"
+                                : "Post reply"}
+                          </button>
+                        </div>
+                      </form>
                     )}
 
                     {isCreator && (

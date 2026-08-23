@@ -272,6 +272,22 @@ export async function saveCreatorReply(slug, reviewId, body) {
   );
 }
 
+// The original reviewer can create or update their follow-up.
+export async function saveReviewerFollowUp(slug, reviewId, body) {
+  return apiFetch(
+    `/games/${encodeURIComponent(slug)}/reviews/${encodeURIComponent(
+      reviewId
+    )}/reply/follow-up`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ body }),
+    }
+  );
+}
+
 export function getGameFileUrl(fileId) {
   return `${API_URL}/uploads/files/${encodeURIComponent(fileId)}`;
 }

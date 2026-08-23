@@ -47,7 +47,8 @@ model User {
   games         Game[]
   claims        GameClaim[]
   reviews       Review[]
-  reviewReplies ReviewReply[]
+  creatorReviewReplies ReviewReply[] @relation("CreatorReviewReplies")
+  reviewFollowUps       ReviewReply[] @relation("ReviewerFollowUps")
 
   @@map("users")
 }
@@ -145,9 +146,17 @@ model ReviewReply {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
-  review  Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  creator User   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  // Original reviewer's follow-up.
+  reviewerId        String?   @map("reviewer_id") @db.Uuid
+  reviewerBody      String?   @map("reviewer_body")
+  reviewerCreatedAt DateTime? @map("reviewer_created_at") @db.Timestamptz(6)
+  reviewerUpdatedAt DateTime? @map("reviewer_updated_at") @db.Timestamptz(6)
+
+  review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  creator  User   @relation("CreatorReviewReplies", fields: [creatorId], references: [id], onDelete: Cascade)
+  reviewer User?  @relation("ReviewerFollowUps", fields: [reviewerId], references: [id], onDelete: Cascade)
 
   @@index([creatorId])
+  @@index([reviewerId])
   @@map("review_replies")
 }

@@ -759,7 +759,7 @@ return (
                     </span>
                     <span>
                       <Users size={15} />
-                      {game.plays}
+                      {game.peers}
                     </span>
                     <span>
                       {game.mode === 'Download' ? <Download size={15} /> : <Play size={15} />}
