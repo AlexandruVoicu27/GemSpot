@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getUploadStatus, uploadGame } from "../api";
+import { GAME_GENRES, MAX_GAME_GENRES } from "../constants/genres";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -7,20 +8,6 @@ import {
   ShieldCheck,
   Upload,
 } from "lucide-react";
-
-const genres = [
-  "Action",
-  "Adventure",
-  "Puzzle",
-  "Horror",
-  "Platformer",
-  "RPG",
-  "Strategy",
-  "Simulation",
-  "Sports",
-  "Shooter",
-  "Visual Novel",
-];
 
 // Displays the game upload form and scan status.
 export default function UploadPage({ onBack }) {
@@ -100,18 +87,22 @@ export default function UploadPage({ onBack }) {
 
   // Adds or removes a genre and keeps the form's genre text synchronized.
   const toggleGenre = (genre) => {
-    setSelectedGenres((currentGenres) => {
-      const nextGenres = currentGenres.includes(genre)
-        ? currentGenres.filter((item) => item !== genre)
-        : [...currentGenres, genre];
+    const isSelected = selectedGenres.includes(genre);
 
-      setForm((currentForm) => ({
-        ...currentForm,
-        genre: nextGenres.join(", "),
-      }));
+    if (!isSelected && selectedGenres.length >= MAX_GAME_GENRES) {
+      setError(`You can select up to ${MAX_GAME_GENRES} genres.`);
+      return;
+    }
 
-      return nextGenres;
-    });
+    const nextGenres = isSelected
+      ? selectedGenres.filter((item) => item !== genre)
+      : [...selectedGenres, genre];
+
+    setSelectedGenres(nextGenres);
+    setForm((currentForm) => ({
+      ...currentForm,
+      genre: nextGenres.join(", "),
+    }));
 
     setError("");
     setNotice("");
@@ -196,7 +187,7 @@ export default function UploadPage({ onBack }) {
             <legend>Genre</legend>
 
             <div className="genre-options">
-              {genres.map((genre) => (
+              {GAME_GENRES.map((genre) => (
                 <button
                   className={
                     selectedGenres.includes(genre)

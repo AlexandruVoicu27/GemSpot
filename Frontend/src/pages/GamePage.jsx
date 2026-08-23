@@ -86,6 +86,11 @@ export default function GamePage({
   const [notice, setNotice] = useState("");
   const reviewsRef = useRef(null);
 
+  // The first render happens before the game request finishes.
+  const screenshots = (game?.files || []).filter(
+    (file) => file.kind === "SCREENSHOT" && Boolean(file.url)
+  );
+
 
   useEffect(() => {
   let active = true;
@@ -214,9 +219,10 @@ async function handleSaveReply(review) {
       ),
     }));
 
+    // The saved response is displayed above, so reset the editor for fresh input.
     setReplyDrafts((currentDrafts) => ({
       ...currentDrafts,
-      [review.id]: result.reply.body,
+      [review.id]: "",
     }));
     setReviewActionNotice(
       existingReply ? "Creator response updated." : "Creator response posted."
@@ -450,6 +456,30 @@ async function handleSaveReply(review) {
               {notice && <p className="edit-notice">{notice}</p>}
             </div>
           </section>
+          {screenshots.length > 0 && (
+            <section className="game-screenshot-section">
+              <p className="eyebrow">GAME MEDIA</p>
+              <h2>Screenshots</h2>
+
+              <div className="game-screenshot-gallery">
+                {screenshots.map((screenshot) => (
+                  <a
+                    key={screenshot.id}
+                    href={screenshot.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="game-screenshot-card"
+                  >
+                    <img
+                      src={screenshot.url}
+                      alt={`${game.title} screenshot`}
+                      loading="lazy"
+                    />
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="game-review-layout">
             <section className="game-review-form-panel">

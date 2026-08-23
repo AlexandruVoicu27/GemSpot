@@ -8,6 +8,7 @@ import {
   Play,
   Star,
   Trash2,
+  Pencil,
 } from "lucide-react";
 import { deleteGame, getMyProjects, publishGame } from "../api";
 
@@ -38,7 +39,7 @@ function ProjectCover({ project }) {
 }
 
 // Displays all projects owned by the current creator.
-export default function ProjectsPage({ profile, accountLabel, onBack }) {
+export default function ProjectsPage({ profile, accountLabel, onBack, onEdit }) {
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [publishingId, setPublishingId] = useState("");
@@ -223,6 +224,15 @@ export default function ProjectsPage({ profile, accountLabel, onBack }) {
                         {isPublishing ? "Publishing..." : "Publish game"}
                       </button>
                     )}
+
+                    <button
+                      type="button"
+                      className="project-edit-button"
+                      onClick={() => onEdit(project.id)}
+                    >
+                      <Pencil size={18} />
+                      Edit project
+                    </button>
 
                     {isPublished && (
                       <button

@@ -381,6 +381,68 @@ router.delete("/:gameId", requireAuth, async (req, res) => {
   res.json(archived.data);
 });
 
+// Returns one project to its creator for use on the project edit page.
+// This must be registered at router level, not inside another route handler.
+router.get("/:gameId/edit", requireAuth, async (req, res) => {
+  try {
+    const { data: game, error } = await supabaseAdmin
+      .from("games")
+      .select(`
+        id,
+        title,
+        slug,
+        description,
+        genre,
+        status,
+        cover_image_url,
+        files:game_files(
+          id,
+          kind,
+          file_name,
+          url,
+          storage_path,
+          size_bytes,
+          created_at
+        )
+      `)
+      .eq("id", req.params.gameId)
+      .eq("creator_id", req.user.id)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    if (!game) {
+      return res.status(404).json({
+        error: "Project not found or you do not own this project.",
+      });
+    }
+
+    return res.json({
+      id: game.id,
+      title: game.title,
+      slug: game.slug,
+      description: game.description,
+      status: game.status,
+      coverImageUrl: game.cover_image_url,
+      genres: String(game.genre || "")
+        .split(",")
+        .map((genre) => genre.trim())
+        .filter(Boolean),
+      screenshots: (game.files || []).filter(
+        (file) => file.kind === "SCREENSHOT"
+      ),
+    });
+  } catch (error) {
+    console.error("Could not load editable project:", error);
+
+    return res.status(500).json({
+      error: "Could not load the project.",
+    });
+  }
+});
+
 router.get("/:slug", async (req, res) => {
   if (!requireSupabaseConfig(res)) {
     return;

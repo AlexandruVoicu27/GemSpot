@@ -7,6 +7,10 @@ const multer = require("multer");
 const { supabaseAdmin, requireSupabaseConfig } = require("../db");
 const requireAuth = require("../middleware/requireAuth");
 const { scanFile } = require("../services/fileScanner");
+const {
+  receiveProjectMedia,
+  saveProjectMedia,
+} = require("../services/projectMedia");
 
 const router = express.Router();
 const quarantineDir = path.resolve(
@@ -495,6 +499,18 @@ router.post(
     });
   },
   createUpload
+);
+
+// Lets a creator update only their own game's genres, cover, and screenshots.
+router.patch(
+  "/games/:gameId",
+  requireAuth,
+  (_req, res, next) => {
+    if (!requireSupabaseConfig(res)) return;
+    next();
+  },
+  receiveProjectMedia,
+  saveProjectMedia
 );
 
 router.get("/settings", requireAuth, requireModerator, async (_req, res) => {

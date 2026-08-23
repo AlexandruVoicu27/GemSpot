@@ -8,6 +8,7 @@ import ProjectsPage from "./pages/ProjectsPage";
 import AdminManagementPage from "./pages/AdminManagementPage";
 import GamePage from "./pages/GamePage";
 import PublicProfilePage from "./pages/PublicProfilePage";
+import EditProjectPage from "./pages/EditProjectPage";
 import {
   ArrowLeft,
   Bell,
@@ -87,6 +88,8 @@ function App() {
   // Ne spune daca formularul de login/signup este in curs de trimitere.
   const [isAuthLoading, setIsAuthLoading] = useState(false);
 
+  const [editingGameId, setEditingGameId] = useState("");
+
   // Controleaza modalul de confirmare pentru logout.
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
 
@@ -106,6 +109,11 @@ function App() {
   setAuthPage(null);
   setAuthError("");
 };
+
+function showProjectEditor(gameId) {
+  setEditingGameId(gameId);
+  setPage("edit-project");
+}
 
 // Userul curent, daca exista sesiune.
 const user = session?.user ?? null;
@@ -141,6 +149,10 @@ const isAuthenticated = Boolean(user);
   const isEditProfilePage = page === "edit-profile" && isAuthenticated;
   const isUploadPage = page === "upload" && isAuthenticated;
   const isProjectsPage = page === "projects" && isAuthenticated;
+  const isEditProjectPage =
+    page === "edit-project" &&
+    isAuthenticated &&
+    Boolean(editingGameId);
   const isAdminPage = page === "admin" && isAuthenticated && profile?.role === "ADMIN";
   const isPublicProfilePage =
     page === "public-profile" && Boolean(publicProfileUsername);
@@ -212,6 +224,20 @@ const isAuthenticated = Boolean(user);
     setPage("projects");
     setAuthPage(null);
     setGateNotice("");
+  };
+
+  // Opens the editor for the project selected on the creator's projects page.
+  const handleEditProject = (gameId) => {
+    setEditingGameId(gameId);
+    setPage("edit-project");
+    setAuthPage(null);
+    setGateNotice("");
+  };
+
+  // Returns to the projects page and forgets the previously selected project.
+  const closeProjectEditor = () => {
+    setEditingGameId("");
+    setPage("projects");
   };
 
   // Opens the moderator review page for authorized users.
@@ -586,11 +612,18 @@ return (
           onBack={() => setPage("profile")}
           currentUserId={user?.id}
         />
+      ) : isEditProjectPage ? (
+        <EditProjectPage
+          gameId={editingGameId}
+          onBack={closeProjectEditor}
+          onSaved={closeProjectEditor}
+        />
       ) : isProjectsPage ? (
         <ProjectsPage
           profile={profile}
           accountLabel={accountLabel}
           onBack={() => setPage("profile")}
+          onEdit={handleEditProject}
         />
       ) : isReviewPage ? (
         <ModeratorReviewPage
@@ -745,14 +778,6 @@ return (
                       <Play size={16} />
                     )}
                     Get & review
-                  </button>
-
-                  <button
-                    className="quiet-action"
-                    onClick={() => handleOpenGame(game.slug, true)}
-                  >
-                    <MessageSquare size={16} />
-                    Read reviews
                   </button>
                 </div>
                 </div>

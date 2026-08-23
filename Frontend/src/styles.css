@@ -2721,6 +2721,30 @@ textarea:disabled {
   line-height: 1.5;
 }
 
+/* Keep uploaded covers inside the fixed game-card thumbnail on every screen size. */
+.thumb {
+  position: relative;
+  overflow: hidden;
+}
+
+.thumb-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.thumb > svg,
+.thumb > span {
+  position: relative;
+  z-index: 1;
+}
+
+.thumb > span {
+  margin-top: auto;
+}
+
 @media (max-width: 760px) {
   .search-area {
     width: 100%;
@@ -3480,5 +3504,332 @@ textarea:disabled {
 
   .project-card-image {
     min-height: 190px;
+  }
+}
+
+/* Creator project editor, matched to GemSpot's card-and-shadow visual system. */
+.project-edit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 9px 14px;
+  border: 2px solid #100c0a;
+  background: #f2a11e;
+  color: #160f0b;
+  box-shadow: 4px 4px 0 #050403;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+
+.project-edit-button:hover {
+  background: #ffbf38;
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 #050403;
+}
+
+.project-edit-button:focus-visible,
+.project-file-button:focus-within,
+.project-edit-page .genre-option:focus-visible,
+.project-edit-actions button:focus-visible,
+.project-screenshot button:focus-visible {
+  outline: 3px solid rgba(255, 191, 56, 0.38);
+  outline-offset: 3px;
+}
+
+.project-edit-page {
+  display: grid;
+  gap: 20px;
+  padding: 28px 0 54px;
+}
+
+.project-edit-header {
+  padding: 22px 0 18px;
+  border-bottom: 2px solid #443226;
+}
+
+.project-edit-header .eyebrow {
+  margin: 0;
+}
+
+.project-edit-header h1 {
+  margin: 8px 0 10px;
+  color: #fff8ea;
+  font-size: clamp(2.4rem, 5vw, 4.2rem);
+  line-height: 0.95;
+}
+
+.project-edit-header > p:last-child {
+  max-width: 720px;
+  margin: 0;
+  color: #b9a897;
+  line-height: 1.55;
+}
+
+.project-edit-form {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.15fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.project-edit-section {
+  min-width: 0;
+  padding: 20px;
+  border: 2px solid #443226;
+  background:
+    linear-gradient(135deg, rgba(242, 161, 30, 0.035), transparent 40%),
+    #211814;
+  box-shadow: 6px 6px 0 rgba(5, 4, 3, 0.72);
+}
+
+.project-edit-section h2 {
+  margin: 0 0 8px;
+  color: #fff8ea;
+  font-size: clamp(1.4rem, 2.4vw, 1.85rem);
+}
+
+.project-edit-section > p,
+.project-cover-controls p {
+  margin: 0 0 16px;
+  color: #a89583;
+  line-height: 1.5;
+}
+
+.project-edit-cover-section,
+.project-edit-genres-section {
+  align-content: start;
+}
+
+.project-edit-screenshots-section,
+.project-edit-actions,
+.project-edit-form > .form-error {
+  grid-column: 1 / -1;
+}
+
+.project-cover-editor,
+.project-cover-controls {
+  display: grid;
+  gap: 14px;
+}
+
+.project-cover-preview {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  place-items: center;
+  overflow: hidden;
+  border: 3px solid #100c0a;
+  background: linear-gradient(135deg, #8adf72, #42bfa0);
+  color: #123329;
+  box-shadow: 5px 5px 0 #050403;
+}
+
+.project-cover-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.project-edit-cover-placeholder {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  color: #123329;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.project-edit-cover-placeholder strong {
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+}
+
+.project-cover-controls {
+  align-content: start;
+}
+
+.project-file-button {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 2px solid #100c0a;
+  background: #f2a11e;
+  color: #160f0b;
+  box-shadow: 4px 4px 0 #050403;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+
+.project-file-button:hover {
+  background: #ffbf38;
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 #050403;
+}
+
+.project-selected-file {
+  overflow: hidden;
+  color: #8adf72;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-edit-page .genre-picker,
+.upload-form .genre-picker {
+  padding: 14px;
+  border: 1px dashed #8a6238;
+  background: rgba(255, 191, 56, 0.035);
+}
+
+.project-edit-page .genre-options {
+  align-content: start;
+}
+
+.project-edit-page .genre-option,
+.upload-form .genre-option {
+  transition: transform 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.project-edit-page .genre-option:hover,
+.upload-form .genre-option:hover {
+  transform: translateY(-1px);
+}
+
+.project-screenshot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+  margin: 18px 0;
+}
+
+.project-screenshot-grid:empty {
+  display: none;
+}
+
+.project-screenshot {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+  padding: 9px;
+  border: 2px solid #443226;
+  background: #17110f;
+  box-shadow: 4px 4px 0 #050403;
+}
+
+.project-screenshot img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1px solid #514033;
+  background: #0f0b09;
+  object-fit: cover;
+}
+
+.project-screenshot button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 11px;
+  border: 2px solid #100c0a;
+  background: #9f4b42;
+  color: #fff8ea;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.project-screenshot.removed {
+  border-color: #9f4b42;
+  opacity: 0.58;
+}
+
+.project-screenshot.removed img {
+  filter: grayscale(1);
+}
+
+.project-screenshot.removed button {
+  background: #f2a11e;
+  color: #160f0b;
+}
+
+.project-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.project-edit-actions .save-button,
+.project-edit-actions .cancel-button {
+  min-height: 48px;
+  padding: 0 18px;
+  cursor: pointer;
+}
+
+.project-edit-actions .save-button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.project-edit-form > .form-error {
+  margin: 0;
+  padding: 13px 14px;
+  border: 1px solid #9f4b42;
+  background: rgba(159, 75, 66, 0.12);
+  color: #ff9c88;
+  font-weight: 800;
+}
+
+@media (max-width: 880px) {
+  .project-edit-form {
+    grid-template-columns: 1fr;
+  }
+
+  .project-edit-cover-section,
+  .project-edit-genres-section {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 560px) {
+  .project-edit-page {
+    padding-top: 18px;
+  }
+
+  .project-edit-section {
+    padding: 15px;
+  }
+
+  .project-edit-page .genre-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .project-edit-page .genre-option {
+    width: 100%;
+  }
+
+  .project-screenshot-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .project-edit-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .project-edit-actions .save-button,
+  .project-edit-actions .cancel-button,
+  .project-file-button {
+    width: 100%;
   }
 }

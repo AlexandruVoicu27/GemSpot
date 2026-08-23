@@ -275,3 +275,48 @@ export async function saveCreatorReply(slug, reviewId, body) {
 export function getGameFileUrl(fileId) {
   return `${API_URL}/uploads/files/${encodeURIComponent(fileId)}`;
 }
+/**
+ * Gets the editable data for a project.
+ * The backend checks that the authenticated user owns the game.
+ */
+export function getEditableProject(gameId) {
+  return apiFetch(`/games/${encodeURIComponent(gameId)}/edit`);
+}
+/**
+ * Saves genres, an optional new cover and new screenshots.
+ *
+ * FormData is needed because we are sending actual image files.
+ */
+export function saveProjectEdits(
+  gameId,
+  {
+    genres,
+    coverImage,
+    screenshots,
+    removedScreenshotIds,
+  }
+) {
+  const formData = new FormData();
+
+  formData.append("genres", JSON.stringify(genres));
+  formData.append(
+    "removedScreenshotIds",
+    JSON.stringify(removedScreenshotIds)
+  );
+
+  if (coverImage) {
+    formData.append("coverImage", coverImage);
+  }
+
+  screenshots.forEach((screenshot) => {
+    formData.append("screenshots", screenshot);
+  });
+
+  return apiFetch(
+    `/uploads/games/${encodeURIComponent(gameId)}`,
+    {
+      method: "PATCH",
+      body: formData,
+    }
+  );
+}
