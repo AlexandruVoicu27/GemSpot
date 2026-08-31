@@ -231,6 +231,9 @@ export async function getReviewState(slug) {
     `/games/${encodeURIComponent(slug)}/review-state`
   );
 }
+export async function getAwaitingReviewGames() {
+  return apiFetch("/games/awaiting-review");
+}
 
 export async function claimGame(slug) {
   return apiFetch(`/games/${encodeURIComponent(slug)}/claim`, {

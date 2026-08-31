@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { clearAuthToken, getCurrentUser, getGames, login, searchSite, signup, updateProfile } from "./api";
+import { clearAuthToken,getAwaitingReviewGames, getCurrentUser, getGames, login, searchSite, signup, updateProfile } from "./api";
 import ProfilePage from "./pages/ProfilePage";
 import EditProfilePage from "./pages/EditProfilePage";
 import UploadPage from "./pages/UploadPage";
@@ -58,8 +58,7 @@ function App() {
   const [isSearching, setIsSearching] = useState(false);
   const [publicProfileUsername, setPublicProfileUsername] = useState("");
 
-// Ratingul selectat in zona de Quick Review.
-  const [rating, setRating] = useState(4);
+
 
 // Datele sesiunii curente: user, profile si token dupa login.
   const [session, setSession] = useState(null);
@@ -95,9 +94,9 @@ function App() {
 
   // Mesaj afisat cand userul incearca o actiune care cere cont.
   const [gateNotice, setGateNotice] = useState("");
-
-  // Textul scris in textarea-ul de review.
-  const [reviewText, setReviewText] = useState("");
+  const [awaitingReviewGames, setAwaitingReviewGames] = useState([]);
+  const [isLoadingAwaitingReviews, setIsLoadingAwaitingReviews] = useState(false);
+  const [awaitingReviewsError, setAwaitingReviewsError] = useState("");
 
   // Pagina curenta din aplicatie. Pentru inceput avem "home" si "profile".
   const [page, setPage] = useState("home");
@@ -425,6 +424,49 @@ const isAuthenticated = Boolean(user);
       });
   }, []);
 
+  useEffect(() => {
+  let active = true;
+
+  if (!isAuthenticated) {
+    setAwaitingReviewGames([]);
+    setAwaitingReviewsError("");
+    setIsLoadingAwaitingReviews(false);
+    return undefined;
+  }
+
+  // Reload when the account returns from a game page.
+  if (page !== "home") {
+    return undefined;
+  }
+
+  setIsLoadingAwaitingReviews(true);
+  setAwaitingReviewsError("");
+
+  getAwaitingReviewGames()
+    .then((games) => {
+      if (active) {
+        setAwaitingReviewGames(Array.isArray(games) ? games : []);
+      }
+    })
+    .catch((error) => {
+      if (active) {
+        setAwaitingReviewGames([]);
+        setAwaitingReviewsError(
+          error.message || "Could not load your review queue."
+        );
+      }
+    })
+    .finally(() => {
+      if (active) {
+        setIsLoadingAwaitingReviews(false);
+      }
+    });
+
+  return () => {
+    active = false;
+  };
+}, [isAuthenticated, page, user?.id]);
+
 return (
     <main className="app-shell">
       <header className="site-header">
@@ -745,13 +787,22 @@ return (
                   <Gamepad2 size={34} />
                 )}
 
-                <span>{game.tag}</span>
               </div>
                 <div className="game-info">
-                  <div>
-                    <h3>{game.title}</h3>
-                    <p>by {game.creator}</p>
+                <div className="game-heading">
+                  <h3>{game.title}</h3>
+                  <p>by {game.creator}</p>
+                  
+                  <div className="genre-options game-genres">
+                    {game.tag
+                      .split(",")
+                      .map((genre) => genre.trim())
+                      .filter(Boolean)
+                      .map((genre) => (
+                        <span className="genre-option" key={genre}>{genre}</span>
+                      ))}
                   </div>
+                </div>
                   <div className="game-stats">
                     <span>
                       <Star size={15} fill="currentColor" />
@@ -802,39 +853,66 @@ return (
             </div>
           </section>
 
-          <section className="rating-card">
-            <div className="rating-top">
-              <span className="eyebrow">Quick Review</span>
-              <strong>{isAuthenticated ? `${rating}.0` : 'Locked'}</strong>
-            </div>
-            <div className="rating-buttons" aria-label="Rate prototype">
-              {[1, 2, 3, 4, 5].map((value) => (
-                <button
-                  aria-label={`Rate ${value}`}
-                  className={value <= rating ? 'filled' : ''}
-                  onClick={() => requireAccount('Writing reviews') && setRating(value)}
-                  key={value}
-                >
-                  <Star size={18} fill="currentColor" />
-                </button>
-              ))}
-            </div>
-            <textarea
-              disabled={!isAuthenticated}
-              value={reviewText}
-              onChange={(event) => setReviewText(event.target.value)}
-              onFocus={() => requireAccount('Writing reviews')}
-              placeholder={
-                isAuthenticated
-                  ? 'Write what worked, what broke, and what would make you replay it.'
-                  : 'Log in to leave reviews after taking a game.'
-              }
-            />
-            <button className="review-submit" onClick={() => requireAccount('Submitting reviews')}>
-              {isAuthenticated ? <MessageSquare size={17} /> : <LockKeyhole size={17} />}
-              Submit review
-            </button>
-          </section>
+          {isAuthenticated && (
+  <section className="activity-card awaiting-review-card">
+    <div className="section-mini">
+      <MessageSquare size={18} />
+      <strong>Games awaiting your review</strong>
+      {!isLoadingAwaitingReviews && (
+        <span className="awaiting-review-count">
+          {awaitingReviewGames.length}
+        </span>
+      )}
+    </div>
+
+    {isLoadingAwaitingReviews && (
+      <p className="empty-state">Loading your games...</p>
+    )}
+
+    {!isLoadingAwaitingReviews && awaitingReviewsError && (
+      <p className="empty-state error-state">
+        {awaitingReviewsError}
+      </p>
+    )}
+
+    {!isLoadingAwaitingReviews &&
+      !awaitingReviewsError &&
+      awaitingReviewGames.length === 0 && (
+        <p className="empty-state">
+          You're all caught up.
+        </p>
+      )}
+
+    {!isLoadingAwaitingReviews &&
+      awaitingReviewGames.map((game) => (
+        <button
+          className="awaiting-review-item"
+          type="button"
+          onClick={() => handleOpenGame(game.slug)}
+          key={game.claimId}
+        >
+          <span className="awaiting-review-cover">
+            {game.coverImage ? (
+              <img src={game.coverImage} alt="" />
+            ) : (
+              <Gamepad2 size={20} />
+            )}
+          </span>
+
+          <span className="awaiting-review-info">
+            <strong>{game.title}</strong>
+            <small>
+              by {game.creator} · {game.genre}
+            </small>
+          </span>
+
+          <span className="awaiting-review-action">
+            Review
+          </span>
+        </button>
+      ))}
+  </section>
+)}
 
           <section className="activity-card">
             <div className="section-mini">
