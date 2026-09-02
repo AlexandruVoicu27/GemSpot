@@ -231,6 +231,12 @@ export async function getReviewState(slug) {
     `/games/${encodeURIComponent(slug)}/review-state`
   );
 }
+
+// Loads creators with stats gathered from all their published games.
+export async function getCreators() {
+  return apiFetch("/users");
+}
+
 export async function getAwaitingReviewGames() {
   return apiFetch("/games/awaiting-review");
 }

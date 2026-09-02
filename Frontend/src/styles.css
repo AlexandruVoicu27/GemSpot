@@ -3907,6 +3907,7 @@ textarea:disabled {
   .project-file-button {
     width: 100%;
   }
+}
 
   .reviewer-follow-up {
   margin-top: 14px;
@@ -3998,4 +3999,378 @@ textarea:disabled {
   line-height: 1;
   white-space: nowrap;
 }
+
+/* ========================================
+   CREATOR DIRECTORY PAGE
+   ======================================== */
+
+.creator-directory-page {
+  display: grid;
+  gap: 18px;
+  padding: 30px 0 70px;
+}
+
+.creator-directory-heading {
+  align-items: flex-end;
+  margin: 0 0 4px;
+}
+
+.creator-directory-heading h1 {
+  margin: 4px 0 8px;
+  color: #fff3dc;
+  font-size: clamp(2.2rem, 5vw, 4rem);
+  line-height: 0.95;
+}
+
+.creator-directory-heading p {
+  max-width: 620px;
+  margin: 0;
+  color: #b9a897;
+  line-height: 1.55;
+}
+
+
+/* ========================================
+   CREATOR LIST
+   ======================================== */
+
+.creator-list {
+  display: grid;
+  gap: 12px;
+}
+
+
+/* ========================================
+   CREATOR CARD
+   Same horizontal structure as game cards
+   ======================================== */
+
+.creator-profile-card {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+  width: 100%;
+  padding: 12px;
+  overflow: hidden;
+  border: 2px solid #443226;
+  background:
+    linear-gradient(
+      140deg,
+      rgba(138, 223, 114, 0.08),
+      transparent 35%
+    ),
+    #211814;
+}
+
+
+/* ========================================
+   CREATOR PROFILE PICTURE
+   ======================================== */
+
+.creator-avatar-panel {
+  display: grid;
+  align-self: start;
+  width: 150px;
+  height: 150px;
+  min-height: 0;
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid #443226;
+  background:
+    radial-gradient(
+      circle at 30% 25%,
+      rgba(255, 191, 56, 0.3),
+      transparent 42%
+    ),
+    linear-gradient(135deg, #315f49, #203b34);
+}
+
+.creator-card-avatar {
+  display: grid;
+  flex: 0 0 104px;
+  width: 104px;
+  height: 104px;
+  place-items: center;
+  overflow: hidden;
+  border: 4px solid #ffce70;
+  border-radius: 50%;
+  outline: 3px solid #100c0a;
+  background: #ffbf38;
+  color: #17110f;
+  font-size: 1.7rem;
+  font-weight: 1000;
+  box-shadow: 7px 7px 0 rgba(0, 0, 0, 0.65);
+}
+
+.creator-card-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: center;
+}
+
+
+/* ========================================
+   CREATOR INFORMATION
+   ======================================== */
+
+.creator-card-info {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.creator-card-heading {
+  min-width: 0;
+}
+
+.creator-card-heading h2 {
+  margin: 4px 0;
+  overflow: hidden;
+  color: #fff8ea;
+  font-size: clamp(1.35rem, 2vw, 1.75rem);
+  line-height: 1.1;
+  text-overflow: ellipsis;
+}
+
+.creator-card-heading p {
+  margin: 0;
+  color: #ffbf38;
+  font-weight: 800;
+}
+
+.creator-card-bio {
+  max-width: 720px;
+  margin: 0;
+  color: #b9a897;
+  line-height: 1.5;
+}
+
+
+/* ========================================
+   CREATOR GENRES
+   ======================================== */
+
+.creator-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+
+.creator-genres .genre-option {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 2px solid #514033;
+  background: #211814;
+  color: #f4dfc5;
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+
+/* ========================================
+   CREATOR STATISTICS
+   ======================================== */
+
+.creator-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.creator-stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 9px;
+  background: #34271f;
+  color: #f4dfc5;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.creator-stats span:first-child {
+  color: #ffce70;
+}
+
+
+/* ========================================
+   MINI GAME COVERS
+   ======================================== */
+
+.creator-featured-games {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.creator-featured-label {
+  color: #a89583;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.creator-game-covers {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.creator-game-cover {
+  display: grid;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid #100c0a;
+  background: #34271f;
+  color: #ffbf38;
+}
+
+.creator-game-cover img {
+  display: block;
+  width: 44px;
+  height: 44px;
+  max-width: 44px;
+  object-fit: cover;
+}
+
+
+/* ========================================
+   VIEW PROFILE BUTTON
+   ======================================== */
+
+.creator-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.creator-card-actions button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 12px;
+  border: 2px solid #100c0a;
+  background: #ffbf38;
+  color: #17110f;
+  font-weight: 900;
+  box-shadow: 4px 4px 0 #050403;
+}
+
+.creator-card-actions button:hover {
+  background: #ffce70;
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 #050403;
+}
+
+
+/* ========================================
+   TABLET AND MOBILE
+   ======================================== */
+
+@media (max-width: 760px) {
+  .creator-directory-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .creator-directory-heading .filter-row {
+    justify-content: flex-start;
+  }
+
+  .creator-profile-card {
+    grid-template-columns: 112px minmax(0, 1fr);
+  }
+
+  .creator-avatar-panel {
+    width: 112px;
+    height: 112px;
+    min-height: 0;
+  }
+
+  .creator-card-avatar {
+    flex-basis: 78px;
+    width: 78px;
+    height: 78px;
+    font-size: 1.25rem;
+    box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.55);
+  }
+
+  .creator-card-avatar img {
+    max-width: 78px;
+  }
+}
+
+
+/* ========================================
+   SMALL MOBILE
+   ======================================== */
+
+@media (max-width: 520px) {
+  .creator-directory-page {
+    padding-top: 20px;
+  }
+
+  .creator-profile-card {
+    grid-template-columns: 82px minmax(0, 1fr);
+    gap: 11px;
+    padding: 10px;
+  }
+
+  .creator-avatar-panel {
+    width: 82px;
+    height: 82px;
+    min-height: 0;
+  }
+
+  .creator-card-avatar {
+    flex-basis: 60px;
+    width: 60px;
+    height: 60px;
+    font-size: 1rem;
+  }
+
+  .creator-card-avatar img {
+    max-width: 60px;
+  }
+
+  .creator-card-info {
+    gap: 11px;
+  }
+
+  .creator-card-bio {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+  }
+
+  .creator-stats {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .creator-card-actions button {
+    width: 100%;
+  }
 }

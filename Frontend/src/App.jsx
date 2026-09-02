@@ -9,6 +9,7 @@ import AdminManagementPage from "./pages/AdminManagementPage";
 import GamePage from "./pages/GamePage";
 import PublicProfilePage from "./pages/PublicProfilePage";
 import EditProjectPage from "./pages/EditProjectPage";
+import CreatorsPage from "./pages/CreatorsPage";
 import {
   ArrowLeft,
   Bell,
@@ -158,6 +159,7 @@ const isAuthenticated = Boolean(user);
   const canModerate = ["ADMIN", "MODERATOR"].includes(profile?.role);
   const isReviewPage = page === "moderation" && isAuthenticated && canModerate;
   const isGamePage = page === "game" && Boolean(gameSlug);
+  const isCreatorsPage = page === "creators";
 
 
   const visibleGames = useMemo(() => {
@@ -329,8 +331,10 @@ const isAuthenticated = Boolean(user);
       showHomePage();
       return;
     }
-    if (item === "Creators" && isAuthenticated) {
-      setPage("profile");
+    if (item === "Creators") {
+      setPage("creators");
+      setAuthPage(null)
+      setGateNotice("");
       return;
     }
     setGateNotice(item + " is coming next.");
@@ -600,7 +604,7 @@ return (
         <nav className="main-nav" aria-label="Primary navigation">
           {navItems.map((item) => (
             <a
-              className={(page === "home" && item === "Games") || (page === "profile" && item === "Creators") ? "active" : ""}
+              className={(page === "home" && item === "Games") || (page === "creators" && item === "Creators") ? "active" : ""}
               href="#"
               onClick={(event) => handleNavClick(event, item)}
               key={item}
@@ -644,10 +648,13 @@ return (
           onRequireAuth={requireAccount}
           onBack={showHomePage}
         />
+      ) : isCreatorsPage ? (
+         <CreatorsPage onOpenProfile={handleOpenPublicProfile} />
+
       ) : isPublicProfilePage ? (
         <PublicProfilePage
           username={publicProfileUsername}
-          onBack={() => setPage("home")}
+          onBack={() => setPage("creators")}
         />
       ) : isAdminPage ? (
         <AdminManagementPage

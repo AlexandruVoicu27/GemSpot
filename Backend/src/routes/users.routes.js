@@ -8,6 +8,168 @@ function getPublicProfileSelect() {
   return "id, username, display_name, bio, avatar_url";
 }
 
+function toCreatorCard(creator) {
+  const games = [...(creator.games || [])].sort(
+    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+  );
+
+  const ratings = games.flatMap((game) =>
+    (game.reviews || [])
+      .map((review) => Number(review.rating))
+      .filter(Number.isFinite)
+  );
+
+  const ratingTotal = ratings.reduce((sum, rating) => sum + rating, 0);
+
+  const genres = [
+    ...new Set(
+      games.flatMap((game) =>
+        String(game.genre || "")
+          .split(",")
+          .map((genre) => genre.trim())
+          .filter(Boolean)
+      )
+    ),
+  ].slice(0, 3);
+
+  return {
+    id: creator.id,
+    username: creator.username,
+    displayName: creator.display_name,
+    bio: creator.bio,
+    avatarUrl: creator.avatar_url,
+    averageRating:
+      ratings.length > 0
+        ? Number((ratingTotal / ratings.length).toFixed(1))
+        : null,
+    reviewCount: ratings.length,
+    publishedGames: games.length,
+    genres,
+    featuredGames: games.slice(0, 3).map((game) => ({
+      id: game.id,
+      title: game.title,
+      slug: game.slug,
+      coverImage: game.cover_image_url || "",
+    })),
+  };
+}
+
+// Lists creators who have at least one published game.
+router.get("/", async (req, res) => {
+  if (!requireSupabaseConfig(res)) {
+    return;
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("users")
+    .select(`
+      id,
+      username,
+      display_name,
+      bio,
+      avatar_url,
+      games:games!inner(
+        id,
+        title,
+        slug,
+        genre,
+        status,
+        created_at,
+        cover_image_url,
+        reviews(id, rating)
+      )
+    `)
+    .eq("games.status", "PUBLISHED")
+    .order("username", { ascending: true });
+
+  if (error) {
+    return res.status(500).json({ error: error.message });
+  }
+
+  res.json((data || []).map(toCreatorCard));
+});
+
+function toCreatorCard(creator) {
+  const games = [...(creator.games || [])].sort(
+    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+  );
+
+  const ratings = games.flatMap((game) =>
+    (game.reviews || [])
+      .map((review) => Number(review.rating))
+      .filter(Number.isFinite)
+  );
+
+  const ratingTotal = ratings.reduce((sum, rating) => sum + rating, 0);
+
+  const genres = [
+    ...new Set(
+      games.flatMap((game) =>
+        String(game.genre || "")
+          .split(",")
+          .map((genre) => genre.trim())
+          .filter(Boolean)
+      )
+    ),
+  ].slice(0, 3);
+
+  return {
+    id: creator.id,
+    username: creator.username,
+    displayName: creator.display_name,
+    bio: creator.bio,
+    avatarUrl: creator.avatar_url,
+    averageRating:
+      ratings.length > 0
+        ? Number((ratingTotal / ratings.length).toFixed(1))
+        : null,
+    reviewCount: ratings.length,
+    publishedGames: games.length,
+    genres,
+    featuredGames: games.slice(0, 3).map((game) => ({
+      id: game.id,
+      title: game.title,
+      slug: game.slug,
+      coverImage: game.cover_image_url || "",
+    })),
+  };
+}
+
+// Lists creators who have at least one published game.
+router.get("/", async (req, res) => {
+  if (!requireSupabaseConfig(res)) {
+    return;
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("users")
+    .select(`
+      id,
+      username,
+      display_name,
+      bio,
+      avatar_url,
+      games:games!inner(
+        id,
+        title,
+        slug,
+        genre,
+        status,
+        created_at,
+        cover_image_url,
+        reviews(id, rating)
+      )
+    `)
+    .eq("games.status", "PUBLISHED")
+    .order("username", { ascending: true });
+
+  if (error) {
+    return res.status(500).json({ error: error.message });
+  }
+
+  res.json((data || []).map(toCreatorCard));
+});
+
 // Loads one public creator profile and their published games.
 router.get("/:username", async (req, res) => {
   if (!requireSupabaseConfig(res)) {

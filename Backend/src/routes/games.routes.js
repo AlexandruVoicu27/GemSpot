@@ -87,80 +87,7 @@ router.put(
         error: "Game not found.",
       });
     }
-
-    // This is the real creator permission check.
-    if (gameResult.data.creator_id !== req.user.id) {
-      return res.status(403).json({
-        error: "Only the game's creator can reply to its reviews.",
-      });
-    }
-
-    // Confirm that the review belongs to this particular game.
-    const reviewResult = await supabaseAdmin
-      .from("reviews")
-      .select("id")
-      .eq("id", req.params.reviewId)
-      .eq("game_id", gameResult.data.id)
-      .maybeSingle();
-
-    if (reviewResult.error) {
-      return res.status(500).json({
-        error: "Could not load the review.",
-      });
-    }
-
-    if (!reviewResult.data) {
-      return res.status(404).json({
-        error: "Review not found.",
-      });
-    }
-
-    // Upsert means create the first time and update afterward.
-    const replyResult = await supabaseAdmin
-      .from("review_replies")
-      .upsert(
-        {
-          review_id: reviewResult.data.id,
-          creator_id: req.user.id,
-          body,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: "review_id",
-        }
-      )
-        .select(
-      `
-        id,
-        body,
-        created_at,
-        updated_at,
-        reviewer_id,
-        reviewer_body,
-        reviewer_created_at,
-        reviewer_updated_at,
-        creator:users!review_replies_creator_id_fkey(
-          username,
-          display_name
-        )
-      `
-    )
-      .single();
-
-    if (replyResult.error) {
-      return res.status(500).json({
-        error: "Could not save the creator reply.",
-      });
-    }
-
-    return res.json({
-      message: "Creator reply saved.",
-      reply: replyResult.data,
-    });
-  }
-);
-
-// Allows only the original review author to reply to the creator's response.
+    // Allows only the original review author to reply to the creator's response.
 router.put(
   "/:slug/reviews/:reviewId/reply/follow-up",
   requireAuth,
@@ -281,6 +208,77 @@ router.put(
   }
 );
 
+    // This is the real creator permission check.
+    if (gameResult.data.creator_id !== req.user.id) {
+      return res.status(403).json({
+        error: "Only the game's creator can reply to its reviews.",
+      });
+    }
+
+    // Confirm that the review belongs to this particular game.
+    const reviewResult = await supabaseAdmin
+      .from("reviews")
+      .select("id")
+      .eq("id", req.params.reviewId)
+      .eq("game_id", gameResult.data.id)
+      .maybeSingle();
+
+    if (reviewResult.error) {
+      return res.status(500).json({
+        error: "Could not load the review.",
+      });
+    }
+
+    if (!reviewResult.data) {
+      return res.status(404).json({
+        error: "Review not found.",
+      });
+    }
+
+    // Upsert means create the first time and update afterward.
+    const replyResult = await supabaseAdmin
+      .from("review_replies")
+      .upsert(
+        {
+          review_id: reviewResult.data.id,
+          creator_id: req.user.id,
+          body,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "review_id",
+        }
+      )
+        .select(
+      `
+        id,
+        body,
+        created_at,
+        updated_at,
+        reviewer_id,
+        reviewer_body,
+        reviewer_created_at,
+        reviewer_updated_at,
+        creator:users!review_replies_creator_id_fkey(
+          username,
+          display_name
+        )
+      `
+    )
+      .single();
+
+    if (replyResult.error) {
+      return res.status(500).json({
+        error: "Could not save the creator reply.",
+      });
+    }
+
+    return res.json({
+      message: "Creator reply saved.",
+      reply: replyResult.data,
+    });
+  }
+);
 function getCreatorName(creator) {
   if (Array.isArray(creator)) {
     return creator[0]?.username || "Unknown creator";
@@ -319,7 +317,7 @@ function toGameCard(game) {
     tag: game.genre || "Indie",
     coverImage: game.cover_image_url || "",
     score: getAverageRating(game.reviews),
-    peers: game.claims?.length || 0,
+    plays: "0",
     reviews: game.reviews?.length || 0,
     mode: getGameMode(game.files),
     palette: "mint",
@@ -355,7 +353,6 @@ router.get("/", async (req, res) => {
         cover_image_url,
         creator:users(username),
         files:game_files(kind),
-        claims:game_claims(id),
         reviews(id, rating)
       `
     )
@@ -390,7 +387,6 @@ router.get("/mine", requireAuth, async (req, res) => {
         cover_image_url,
         creator:users(username),
         files:game_files(kind, scan_status),
-        claims:game_claims(id),
         reviews(id, rating)
       `
     )
@@ -403,6 +399,81 @@ router.get("/mine", requireAuth, async (req, res) => {
   }
 
   res.json(data.map(toProjectCard));
+});
+
+// Returns published games claimed by this account but not yet reviewed.
+router.get("/awaiting-review", requireAuth, async (req, res) => {
+  if (!requireSupabaseConfig(res)) return;
+
+  const [claimsResult, reviewsResult] = await Promise.all([
+    supabaseAdmin
+      .from("game_claims")
+      .select(`
+        id,
+        created_at,
+        status,
+        game:games!inner(
+          id,
+          title,
+          slug,
+          genre,
+          status,
+          creator_id,
+          cover_image_url,
+          creator:users(username)
+        )
+      `)
+      .eq("user_id", req.user.id)
+      .eq("status", "CLAIMED")
+      .eq("game.status", "PUBLISHED")
+      .order("created_at", { ascending: false }),
+
+    supabaseAdmin
+      .from("reviews")
+      .select("game_id")
+      .eq("user_id", req.user.id),
+  ]);
+
+  if (claimsResult.error || reviewsResult.error) {
+    return res.status(500).json({
+      error: "Could not load games awaiting your review.",
+    });
+  }
+
+  const reviewedGameIds = new Set(
+    (reviewsResult.data || []).map((review) => review.game_id)
+  );
+
+  const games = (claimsResult.data || [])
+    .map((claim) => {
+      const game = Array.isArray(claim.game)
+        ? claim.game[0]
+        : claim.game;
+
+      if (
+        !game ||
+        game.status !== "PUBLISHED" ||
+        game.creator_id === req.user.id ||
+        reviewedGameIds.has(game.id)
+      ) {
+        return null;
+      }
+
+      return {
+        claimId: claim.id,
+        claimedAt: claim.created_at,
+        id: game.id,
+        title: game.title,
+        slug: game.slug,
+        genre: game.genre || "Indie",
+        coverImage: game.cover_image_url || "",
+        creator: getCreatorName(game.creator),
+      };
+    })
+    .filter(Boolean)
+    .slice(0, 6);
+
+  return res.json(games);
 });
 
 // Publishes one game owned by the authenticated creator.
@@ -600,8 +671,8 @@ router.get("/:slug", async (req, res) => {
           body,
           created_at,
           updated_at,
-          user:users(id, username, display_name),
-          reply:review_replies(
+          user:users(username, display_name),
+           reply:review_replies(
             id,
             body,
             created_at,
@@ -610,7 +681,10 @@ router.get("/:slug", async (req, res) => {
             reviewer_body,
             reviewer_created_at,
             reviewer_updated_at,
-            creator:users!review_replies_creator_id_fkey(username, display_name)
+            creator:users!review_replies_creator_id_fkey(
+              username,
+              display_name
+            )
           )
         )      `
     );
@@ -776,7 +850,7 @@ router.post("/:slug/claim", requireAuth, async (req, res) => {
   });
 });
 
-// Creates one immutable review for a game. Further discussion belongs in replies.
+// Creates or updates one review for a game.
 router.post("/:slug/reviews", requireAuth, async (req, res) => {
   if (!requireSupabaseConfig(res)) return;
 
@@ -840,38 +914,38 @@ router.post("/:slug/reviews", requireAuth, async (req, res) => {
     return res.status(500).json({ error: existingReview.error.message });
   }
 
+  let reviewResult;
+
   if (existingReview.data) {
-    return res.status(409).json({
-      error:
-        "Your review is already published. Continue the conversation using replies.",
-      code: "REVIEW_ALREADY_SUBMITTED",
-    });
+    reviewResult = await supabaseAdmin
+      .from("reviews")
+      .update({
+        rating,
+        body,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", existingReview.data.id)
+      .select(
+        "id, rating, body, created_at, updated_at, user:users(username, display_name)"
+      )
+      .single();
+  } else {
+    reviewResult = await supabaseAdmin
+      .from("reviews")
+      .insert({
+        user_id: req.user.id,
+        game_id: gameResult.data.id,
+        claim_id: claimResult.data.id,
+        rating,
+        body,
+      })
+      .select(
+        "id, rating, body, created_at, updated_at, user:users(username, display_name)"
+      )
+      .single();
   }
 
-  const reviewResult = await supabaseAdmin
-    .from("reviews")
-    .insert({
-      user_id: req.user.id,
-      game_id: gameResult.data.id,
-      claim_id: claimResult.data.id,
-      rating,
-      body,
-    })
-    .select(
-      "id, rating, body, created_at, updated_at, user:users(username, display_name)"
-    )
-    .single();
-
   if (reviewResult.error) {
-    // The database uniqueness constraint also protects against simultaneous posts.
-    if (reviewResult.error.code === "23505") {
-      return res.status(409).json({
-        error:
-          "Your review is already published. Continue the conversation using replies.",
-        code: "REVIEW_ALREADY_SUBMITTED",
-      });
-    }
-
     return res.status(500).json({ error: reviewResult.error.message });
   }
 
@@ -884,7 +958,7 @@ router.post("/:slug/reviews", requireAuth, async (req, res) => {
     .eq("id", claimResult.data.id);
 
   res.json({
-    message: "Review submitted.",
+    message: existingReview.data ? "Review updated." : "Review submitted.",
     review: serializeReview(reviewResult.data),
   });
 });
